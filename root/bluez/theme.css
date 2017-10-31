@@ -1,0 +1,76 @@
+/*
+ * Globals
+ */
+
+* {
+    transition-duration: 0.5s;
+}
+
+body {
+    font-family: Verdana, Helvetica, Arial, sans-serif;
+    color: #555;
+    margin-top: 80px;
+    background-color: #DEF;
+}
+
+h1, .h1,
+h2, .h2,
+h3, .h3,
+h4, .h4,
+h5, .h5,
+h6, .h6 {
+    font-family: "Trebuchet MS", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: normal;
+    color: #333;
+}
+
+/*
+ * Bootstrap tweaks and overrides
+ */
+.form-group label {
+    font-weight: bold;
+}
+
+/*
+ * Top nav
+ */
+.bluez-navbar {
+    background-color: rgba(0, 75, 153, 0.8);
+}
+.bluez-navbar a {
+    color: #DDD;
+}
+.bluez-navbar a:hover, .bluez-navbar a:active {
+    color: #FFF !important;
+}
+.bluez-navbar .active a {
+    color: #FFF;
+}
+
+/* Blog title and description */
+.bluez-header {
+    padding-bottom: 1.25rem;
+    margin-bottom: 2rem;
+    border-bottom: .05rem solid #CCC;
+}
+.bluez-title {
+    margin-bottom: 0;
+    font-size: 2rem;
+    font-weight: 400;
+}
+.bluez-description {
+    font-size: 1.1rem;
+    color: #999;
+}
+
+/* Page footer */
+.bluez-footer {
+    padding: 2.5rem 0;
+    color: #999;
+    text-align: center;
+    background-color: #EEF;
+    border-top: .05rem solid #CCC;
+}
+.bluez-footer p:last-child {
+    margin-bottom: 0;
+}

@@ -1,0 +1,132 @@
+{{ define "title" }}Untitled{{ end }}
+{{ define "layout" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>{{ template "title" or "Untitled" }} - {{ .title }}</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/bluez/theme.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-md fixed-top bluez-navbar">
+    <a href="#" class="navbar-brand">{{ .title }}</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a href="/" class="nav-link">Home <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+                <a href="/about" class="nav-link">About</a>
+            </li>
+            <li class="nav-item">
+                <a href="/archive" class="nav-link">Archive</a>
+            </li>
+        </ul>
+
+        <form class="form-inline mt-2 mt-md-0">
+            <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-light my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </div>
+</nav>
+
+<div class="bluez-header">
+    <div class="container">
+        <h1 class="bluez-title">{{ .title }}</h1>
+        <p class="lead bluez-description">Just another web blog.</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-9">
+            {{ template "content" . }}
+        </div>
+        <div class="col-3">
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">About</h4>
+
+                    <p>Hello, world!</p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">Archives</h4>
+
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">March 2018</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">February 2018</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">January 2018</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Elsewhere</h4>
+
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Facebook</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Twitter</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<footer class="bluez-footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-8">
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">RSS</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Random</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Archive</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Ask me anything</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Back to top</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-4">
+                Copyright 2017
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
+{{ end }}

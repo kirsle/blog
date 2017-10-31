@@ -1,0 +1,39 @@
+{{ define "title" }}Initial Setup{{ end }}
+{{ define "content" }}
+<h1>Initial Setup</h1>
+
+<p>
+    Welcome to your new web blog! To get started, you'll need to create a username
+    and password to be your <strong>admin user</strong>. You can create additional
+    users for your blog in a later step.
+</p>
+
+<p>
+    It is not recommended to name this user "admin" because that would be very
+    predictable for an attacker to guess.
+</p>
+
+<form method="POST" action="/admin/setup">
+    <div class="form-group">
+        <label for="setup-admin-username">Admin username:</label>
+        <input type="text" class="form-control" id="setup-admin-username" placeholder="Enter username">
+    </div>
+    <div class="form-group">
+        <label for="setup-admin-password1">Passphrase:</label>
+        <input type="password"
+            class="form-control"
+            id="setup-admin-password1"
+            placeholder="correct horse battery staple"
+            aria-describedby="setup-password-help">
+        <small id="setup-password-help" class="form-text text-muted">
+            Choose an <a href="https://xkcd.com/936/" target="_blank">appropriately strong</a> password.
+        </small>
+    </div>
+    <div class="form-group">
+        <label for="setup-admin-password2">Confirm:</label>
+        <input type="password" class="form-control" id="setup-admin-password2" placeholder="correct horse battery staple">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Continue</button>
+</form>
+{{ end }}

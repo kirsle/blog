@@ -34,5 +34,6 @@ func main() {
 	flag.Parse()
 
 	app := core.New(DocumentRoot, "")
+	app.Debug = fDebug
 	app.ListenAndServe(fAddress)
 }

@@ -10,6 +10,8 @@ import (
 // Blog is the root application object that maintains the app configuration
 // and helper objects.
 type Blog struct {
+	Debug bool
+
 	// DocumentRoot is the core static files root; UserRoot masks over it.
 	DocumentRoot string
 	UserRoot     string
@@ -27,6 +29,7 @@ func New(documentRoot, userRoot string) *Blog {
 	}
 	r := mux.NewRouter()
 	blog.r = r
+	r.HandleFunc("/admin/setup", blog.SetupHandler)
 	r.HandleFunc("/", blog.PageHandler)
 	r.NotFoundHandler = http.HandlerFunc(blog.PageHandler)
 
