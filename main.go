@@ -6,8 +6,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 
 	"github.com/kirsle/blog/core"
+	"github.com/kirsle/blog/core/jsondb"
 )
 
 // Build-time config constants.
@@ -32,8 +35,16 @@ func init() {
 
 func main() {
 	flag.Parse()
+	userRoot := flag.Arg(0)
+	if userRoot == "" {
+		fmt.Printf("Need user root\n")
+		os.Exit(1)
+	}
 
-	app := core.New(DocumentRoot, "")
-	app.Debug = fDebug
+	app := core.New(DocumentRoot, userRoot)
+	if fDebug {
+		app.Debug = true
+		jsondb.SetDebug(true)
+	}
 	app.ListenAndServe(fAddress)
 }

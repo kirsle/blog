@@ -22,15 +22,28 @@ func (b *Blog) NotFound(w http.ResponseWriter, r *http.Request, message ...strin
 	})
 	if err != nil {
 		log.Error(err.Error())
-		http.NotFound(w, r)
+		w.Write([]byte("Unrecoverable template error for NotFound()"))
 	}
 }
 
-// Forbidden sends an HTTP 400 Forbidden response.
+// Forbidden sends an HTTP 403 Forbidden response.
 func (b *Blog) Forbidden(w http.ResponseWriter, r *http.Request, message ...string) {
 	w.WriteHeader(http.StatusForbidden)
 	err := b.RenderTemplate(w, r, ".errors/403", nil)
 	if err != nil {
-		http.NotFound(w, r)
+		log.Error(err.Error())
+		w.Write([]byte("Unrecoverable template error for Forbidden()"))
+	}
+}
+
+// BadRequest sends an HTTP 400 Bad Request.
+func (b *Blog) BadRequest(w http.ResponseWriter, r *http.Request, message ...string) {
+	w.WriteHeader(http.StatusBadRequest)
+	err := b.RenderTemplate(w, r, ".errors/400", map[string]interface{}{
+		"message": message[0],
+	})
+	if err != nil {
+		log.Error(err.Error())
+		w.Write([]byte("Unrecoverable template error for BadRequest()"))
 	}
 }
