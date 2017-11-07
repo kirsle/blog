@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/core/models/users"
 	"github.com/urfave/negroni"
 )
 
@@ -32,6 +33,9 @@ func New(documentRoot, userRoot string) *Blog {
 		UserRoot:     userRoot,
 		DB:           jsondb.New(filepath.Join(userRoot, ".private")),
 	}
+
+	// Initialize all the models.
+	users.DB = blog.DB
 
 	r := mux.NewRouter()
 	blog.r = r

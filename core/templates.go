@@ -3,26 +3,35 @@ package core
 import (
 	"html/template"
 	"net/http"
+
+	"github.com/kirsle/blog/core/forms"
 )
 
-// DefaultVars combines template variables with default, globally available vars.
-func (b *Blog) DefaultVars(vars map[string]interface{}) map[string]interface{} {
-	defaults := map[string]interface{}{
-		"title": "Untitled Blog",
-	}
-	if vars == nil {
-		return defaults
-	}
+// Vars is an interface to implement by the templates to pass their own custom
+// variables in. It auto-loads global template variables (site name, etc.)
+// when the template is rendered.
+type Vars struct {
+	// Global template variables.
+	Title string
 
-	for k, v := range defaults {
-		vars[k] = v
-	}
+	// Common template variables.
+	Message string
+	Error   error
+	Form    forms.Form
+}
 
-	return vars
+// LoadDefaults combines template variables with default, globally available vars.
+func (v *Vars) LoadDefaults() {
+	v.Title = "Untitled Blog"
+}
+
+// TemplateVars is an interface that describes the template variable struct.
+type TemplateVars interface {
+	LoadDefaults()
 }
 
 // RenderTemplate responds with an HTML template.
-func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path string, vars map[string]interface{}) error {
+func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path string, vars TemplateVars) error {
 	// Get the layout template.
 	layout, err := b.ResolvePath(".layout")
 	if err != nil {
@@ -46,7 +55,10 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	}
 
 	// Inject globally available variables.
-	vars = b.DefaultVars(vars)
+	if vars == nil {
+		vars = &Vars{}
+	}
+	vars.LoadDefaults()
 
 	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
 	err = t.ExecuteTemplate(w, "layout", vars)

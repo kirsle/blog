@@ -2,16 +2,6 @@
 {{ define "content" }}
 <h1>Initial Setup</h1>
 
-{{ if .errors }}
-    <h2>Please correct the following errors:</h2>
-
-    <ul>
-        {{ range .errors }}
-        <li>{{ . }}</li>
-        {{ end }}
-    </ul>
-{{ end }}
-
 <p>
     Welcome to your new web blog! To get started, you'll need to create a username
     and password to be your <strong>admin user</strong>. You can create additional
@@ -26,7 +16,12 @@
 <form method="POST" action="/admin/setup">
     <div class="form-group">
         <label for="setup-admin-username">Admin username:</label>
-        <input type="text" name="username" class="form-control" id="setup-admin-username" placeholder="Enter username">
+        <input type="text"
+            name="username"
+            class="form-control"
+            id="setup-admin-username"
+            placeholder="Enter username"
+            value="{{ .Form.Username }}">
     </div>
     <div class="form-group">
         <label for="setup-admin-password1">Passphrase:</label>

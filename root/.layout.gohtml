@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <title>{{ template "title" or "Untitled" }} - {{ .title }}</title>
+    <title>{{ template "title" or "Untitled" }} - {{ .Title }}</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -15,7 +15,7 @@
 <body>
 
 <nav class="navbar navbar-expand-md fixed-top bluez-navbar">
-    <a href="#" class="navbar-brand">{{ .title }}</a>
+    <a href="#" class="navbar-brand">{{ .Title }}</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
@@ -41,7 +41,7 @@
 
 <div class="bluez-header">
     <div class="container">
-        <h1 class="bluez-title">{{ .title }}</h1>
+        <h1 class="bluez-title">{{ .Title }}</h1>
         <p class="lead bluez-description">Just another web blog.</p>
     </div>
 </div>
@@ -49,6 +49,12 @@
 <div class="container mb-5">
     <div class="row">
         <div class="col-9">
+            {{ if .Error }}
+            <div class="alert alert-danger">
+                <strong>Error:</strong> {{ .Error }}
+            </div>
+            {{ end }}
+
             {{ template "content" . }}
         </div>
         <div class="col-3">

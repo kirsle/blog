@@ -124,7 +124,7 @@ func (db *DB) makePath(path string) error {
 
 // list returns the documents under a path with optional recursion.
 func (db *DB) list(path string, recursive bool) ([]string, error) {
-	root := db.toPath(path)
+	root := filepath.Join(db.Root, path)
 	var docs []string
 
 	files, err := ioutil.ReadDir(root)

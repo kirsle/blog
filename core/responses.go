@@ -17,8 +17,8 @@ func (b *Blog) NotFound(w http.ResponseWriter, r *http.Request, message ...strin
 	}
 
 	w.WriteHeader(http.StatusNotFound)
-	err := b.RenderTemplate(w, r, ".errors/404", map[string]interface{}{
-		"message": message[0],
+	err := b.RenderTemplate(w, r, ".errors/404", &Vars{
+		Message: message[0],
 	})
 	if err != nil {
 		log.Error(err.Error())
@@ -39,8 +39,8 @@ func (b *Blog) Forbidden(w http.ResponseWriter, r *http.Request, message ...stri
 // BadRequest sends an HTTP 400 Bad Request.
 func (b *Blog) BadRequest(w http.ResponseWriter, r *http.Request, message ...string) {
 	w.WriteHeader(http.StatusBadRequest)
-	err := b.RenderTemplate(w, r, ".errors/400", map[string]interface{}{
-		"message": message[0],
+	err := b.RenderTemplate(w, r, ".errors/400", &Vars{
+		Message: message[0],
 	})
 	if err != nil {
 		log.Error(err.Error())
