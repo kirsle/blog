@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/kirsle/blog/core/forms"
+	"github.com/kirsle/blog/core/models/users"
 )
 
 // Vars is an interface to implement by the templates to pass their own custom
@@ -12,22 +13,33 @@ import (
 // when the template is rendered.
 type Vars struct {
 	// Global template variables.
-	Title string
+	Title       string
+	LoggedIn    bool
+	CurrentUser *users.User
 
 	// Common template variables.
 	Message string
+	Flash   string
 	Error   error
 	Form    forms.Form
 }
 
 // LoadDefaults combines template variables with default, globally available vars.
-func (v *Vars) LoadDefaults() {
+func (v *Vars) LoadDefaults(r *http.Request) {
 	v.Title = "Untitled Blog"
+
+	ctx := r.Context()
+	if user, ok := ctx.Value(userKey).(*users.User); ok {
+		if user.ID > 0 {
+			v.LoggedIn = true
+			v.CurrentUser = user
+		}
+	}
 }
 
 // TemplateVars is an interface that describes the template variable struct.
 type TemplateVars interface {
-	LoadDefaults()
+	LoadDefaults(*http.Request)
 }
 
 // RenderTemplate responds with an HTML template.
@@ -58,7 +70,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	if vars == nil {
 		vars = &Vars{}
 	}
-	vars.LoadDefaults()
+	vars.LoadDefaults(r)
 
 	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
 	err = t.ExecuteTemplate(w, "layout", vars)

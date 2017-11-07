@@ -58,6 +58,25 @@ func Create(u *User) error {
 	return u.Save()
 }
 
+// CheckAuth tests a login with a username and password.
+func CheckAuth(username, password string) (*User, error) {
+	username = Normalize(username)
+
+	// Look up the user by username.
+	u, err := LoadUsername(username)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check the password.
+	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
 // SetPassword sets a user's password by bcrypt hashing it. After this function,
 // u.Password will contain the bcrypt hash.
 func (u *User) SetPassword(password string) error {
@@ -128,7 +147,7 @@ func nextID() int {
 
 	users, err := DB.List("users/by-id")
 	if err != nil {
-		panic(err)
+		return 1
 	}
 
 	for _, doc := range users {

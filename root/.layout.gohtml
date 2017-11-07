@@ -49,6 +49,11 @@
 <div class="container mb-5">
     <div class="row">
         <div class="col-9">
+            {{ if .Flash }}
+            <div class="alert alert-success">
+                {{ .Flash }}
+            </div>
+            {{ end }}
             {{ if .Error }}
             <div class="alert alert-danger">
                 <strong>Error:</strong> {{ .Error }}
@@ -62,6 +67,16 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h4 class="card-title">About</h4>
+
+                    {{ if .LoggedIn }}
+                        Hello, {{ .CurrentUser.Username }}.<br>
+                        <a href="/logout">Log out</a><br>
+                        {{ if .CurrentUser.Admin }}
+                        <a href="/admin">Admin center</a>
+                        {{ end }}
+                    {{ else }}
+                        <a href="/login">Log in</a>
+                    {{ end }}
 
                     <p>Hello, world!</p>
                 </div>

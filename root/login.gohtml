@@ -1,0 +1,19 @@
+{{ define "title" }}Sign In{{ end }}
+{{ define "content" }}
+<h1>Sign In</h1>
+
+<form name="login" action="/login" method="POST">
+    <div class="row">
+        <div class="col">
+            <input type="text" name="username" class="form-control" placeholder="Username">
+        </div>
+        <div class="col">
+            <input type="password" name="password" class="form-control" placeholder="Password">
+        </div>
+        <div class="col">
+            <button type="submit" class="btn btn-primary">Sign In</button>
+            <a href="/" class="btn btn-secondary">Forgot Password</a>
+        </div>
+    </div>
+</form>
+{{ end }}

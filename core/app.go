@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/jsondb"
 	"github.com/kirsle/blog/core/models/users"
 	"github.com/urfave/negroni"
@@ -22,8 +23,9 @@ type Blog struct {
 	DB *jsondb.DB
 
 	// Web app objects.
-	n *negroni.Negroni // Negroni middleware manager
-	r *mux.Router      // Router
+	n     *negroni.Negroni // Negroni middleware manager
+	r     *mux.Router      // Router
+	store sessions.Store
 }
 
 // New initializes the Blog application.
@@ -32,6 +34,8 @@ func New(documentRoot, userRoot string) *Blog {
 		DocumentRoot: documentRoot,
 		UserRoot:     userRoot,
 		DB:           jsondb.New(filepath.Join(userRoot, ".private")),
+
+		store: sessions.NewCookieStore([]byte("secret-key")), // TODO configurable!
 	}
 
 	// Initialize all the models.
@@ -40,6 +44,8 @@ func New(documentRoot, userRoot string) *Blog {
 	r := mux.NewRouter()
 	blog.r = r
 	r.HandleFunc("/admin/setup", blog.SetupHandler)
+	r.HandleFunc("/login", blog.LoginHandler)
+	r.HandleFunc("/logout", blog.LogoutHandler)
 	r.HandleFunc("/", blog.PageHandler)
 	r.NotFoundHandler = http.HandlerFunc(blog.PageHandler)
 
@@ -48,6 +54,7 @@ func New(documentRoot, userRoot string) *Blog {
 		negroni.NewLogger(),
 	)
 	blog.n = n
+	n.Use(negroni.HandlerFunc(blog.AuthMiddleware))
 	n.UseHandler(r)
 
 	return blog

@@ -2,7 +2,6 @@ package forms
 
 import (
 	"errors"
-	"net/http"
 )
 
 // Setup is for the initial blog setup page at /admin/setup.
@@ -10,13 +9,6 @@ type Setup struct {
 	Username string
 	Password string
 	Confirm  string
-}
-
-// Parse the form.
-func (f Setup) Parse(r *http.Request) {
-	f.Username = r.FormValue("username")
-	f.Password = r.FormValue("password")
-	f.Confirm = r.FormValue("confirm")
 }
 
 // Validate the form.
