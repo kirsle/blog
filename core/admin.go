@@ -3,9 +3,16 @@ package core
 import (
 	"net/http"
 
+	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/forms"
+	"github.com/kirsle/blog/core/models/settings"
 	"github.com/kirsle/blog/core/models/users"
 )
+
+// AdminHandler is the admin landing page.
+func (b *Blog) AdminHandler(w http.ResponseWriter, r *http.Request) {
+	b.RenderTemplate(w, r, "admin/index", nil)
+}
 
 // SetupHandler is the initial blog setup route.
 func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,6 +31,14 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			vars.Error = err
 		} else {
+			// Save the site config.
+			log.Info("Creating default website config file")
+			s := settings.Defaults()
+			s.Save()
+
+			// Re-initialize the cookie store with the new secret key.
+			b.store = sessions.NewCookieStore([]byte(s.Security.SecretKey))
+
 			log.Info("Creating admin account %s", form.Username)
 			user := &users.User{
 				Username: form.Username,
@@ -38,6 +53,7 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// All set!
+			b.Login(w, r, user)
 			b.Redirect(w, "/admin")
 			return
 		}

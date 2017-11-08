@@ -122,7 +122,7 @@ func Load(id int) (*User, error) {
 func (u *User) Save() error {
 	// Sanity check that we have an ID.
 	if u.ID == 0 {
-		return errors.New("can't save: user does not have an ID!")
+		return errors.New("can't save a user with no ID")
 	}
 
 	// Save the main DB file.
@@ -174,8 +174,4 @@ func (u *User) key() string {
 // DB key for users by username.
 func (u *User) nameKey() string {
 	return "users/by-name/" + u.Username
-}
-
-func (u *User) DocumentPath() string {
-	return "users/by-id/%s"
 }

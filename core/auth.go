@@ -1,7 +1,6 @@
 package core
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -15,24 +14,16 @@ const (
 	userKey key = iota
 )
 
-// AuthMiddleware loads the user's authentication state.
-func (b *Blog) AuthMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	session, _ := b.store.Get(r, "session")
-	log.Info("Session: %v", session.Values)
-	if loggedIn, ok := session.Values["logged-in"].(bool); ok && loggedIn {
-		// They seem to be logged in. Get their user object.
-		id := session.Values["user-id"].(int)
-		u, err := users.Load(id)
-		if err != nil {
-			log.Error("Error loading user ID %d from session: %v", id, err)
-			next(w, r)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), userKey, u)
-		next(w, r.WithContext(ctx))
+// Login logs the browser in as the given user.
+func (b *Blog) Login(w http.ResponseWriter, r *http.Request, u *users.User) error {
+	session, err := b.store.Get(r, "session") // TODO session name
+	if err != nil {
+		return err
 	}
-	next(w, r)
+	session.Values["logged-in"] = true
+	session.Values["user-id"] = u.ID
+	session.Save(r, w)
+	return nil
 }
 
 // LoginHandler shows and handles the login page.
@@ -58,18 +49,16 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				// Login OK!
 				vars.Flash = "Login OK!"
+				b.Login(w, r, user)
 
-				// Log in the user.
-				session, err := b.store.Get(r, "session") // TODO session name
-				if err != nil {
-					vars.Error = err
+				// A next URL given? TODO: actually get to work
+				next := r.FormValue("next")
+				log.Info("Redirect after login to: %s", next)
+				if len(next) > 0 && next[0] == '/' {
+					b.Redirect(w, next)
 				} else {
-					session.Values["logged-in"] = true
-					session.Values["user-id"] = user.ID
-					session.Save(r, w)
+					b.Redirect(w, "/")
 				}
-
-				b.Redirect(w, "/login")
 				return
 			}
 		}

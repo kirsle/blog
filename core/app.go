@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/core/models/settings"
 	"github.com/kirsle/blog/core/models/users"
 	"github.com/urfave/negroni"
 )
@@ -34,16 +35,36 @@ func New(documentRoot, userRoot string) *Blog {
 		DocumentRoot: documentRoot,
 		UserRoot:     userRoot,
 		DB:           jsondb.New(filepath.Join(userRoot, ".private")),
-
-		store: sessions.NewCookieStore([]byte("secret-key")), // TODO configurable!
 	}
 
-	// Initialize all the models.
+	// Load the site config, or start with defaults if not found.
+	settings.DB = blog.DB
+	config, err := settings.Load()
+	if err != nil {
+		config = settings.Defaults()
+	}
+
+	// Initialize the session cookie store.
+	blog.store = sessions.NewCookieStore([]byte(config.Security.SecretKey))
+	users.HashCost = config.Security.HashCost
+
+	// Initialize the rest of the models.
 	users.DB = blog.DB
 
+	// Initialize the router.
 	r := mux.NewRouter()
 	blog.r = r
+
+	// Blog setup.
 	r.HandleFunc("/admin/setup", blog.SetupHandler)
+
+	// Admin pages that require a logged-in user.
+	admin := mux.NewRouter()
+	admin.HandleFunc("/admin", blog.AdminHandler)
+	r.PathPrefix("/admin").Handler(negroni.New(
+		negroni.HandlerFunc(blog.LoginRequired),
+		negroni.Wrap(admin),
+	))
 	r.HandleFunc("/login", blog.LoginHandler)
 	r.HandleFunc("/logout", blog.LogoutHandler)
 	r.HandleFunc("/", blog.PageHandler)

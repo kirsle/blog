@@ -3,8 +3,10 @@ package core
 import (
 	"html/template"
 	"net/http"
+	"strings"
 
 	"github.com/kirsle/blog/core/forms"
+	"github.com/kirsle/blog/core/models/settings"
 	"github.com/kirsle/blog/core/models/users"
 )
 
@@ -13,7 +15,9 @@ import (
 // when the template is rendered.
 type Vars struct {
 	// Global template variables.
+	SetupNeeded bool
 	Title       string
+	Path        string
 	LoggedIn    bool
 	CurrentUser *users.User
 
@@ -26,7 +30,17 @@ type Vars struct {
 
 // LoadDefaults combines template variables with default, globally available vars.
 func (v *Vars) LoadDefaults(r *http.Request) {
-	v.Title = "Untitled Blog"
+	// Get the site settings.
+	s, err := settings.Load()
+	if err != nil {
+		s = settings.Defaults()
+	}
+
+	if s.Initialized == false && !strings.HasPrefix(r.URL.Path, "/admin/setup") {
+		v.SetupNeeded = true
+	}
+	v.Title = s.Site.Title
+	v.Path = r.URL.Path
 
 	ctx := r.Context()
 	if user, ok := ctx.Value(userKey).(*users.User); ok {
