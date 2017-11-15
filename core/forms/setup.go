@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-// Setup is for the initial blog setup page at /admin/setup.
+// Setup is for the initial blog setup page at /initial-setup.
 type Setup struct {
 	Username string
 	Password string

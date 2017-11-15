@@ -3,61 +3,34 @@ package core
 import (
 	"net/http"
 
-	"github.com/gorilla/sessions"
-	"github.com/kirsle/blog/core/forms"
+	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/models/settings"
-	"github.com/kirsle/blog/core/models/users"
+	"github.com/urfave/negroni"
 )
+
+// AdminRoutes attaches the admin routes to the app.
+func (b *Blog) AdminRoutes(r *mux.Router) {
+	adminRouter := mux.NewRouter().PathPrefix("/admin").Subrouter().StrictSlash(false)
+	r.HandleFunc("/admin", b.AdminHandler) // so as to not be "/admin/"
+	adminRouter.HandleFunc("/settings", b.SettingsHandler)
+	adminRouter.PathPrefix("/").HandlerFunc(b.PageHandler)
+	r.PathPrefix("/admin").Handler(negroni.New(
+		negroni.HandlerFunc(b.LoginRequired),
+		negroni.Wrap(adminRouter),
+	))
+}
 
 // AdminHandler is the admin landing page.
 func (b *Blog) AdminHandler(w http.ResponseWriter, r *http.Request) {
 	b.RenderTemplate(w, r, "admin/index", nil)
 }
 
-// SetupHandler is the initial blog setup route.
-func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
-	vars := &Vars{
-		Form: forms.Setup{},
-	}
+// SettingsHandler lets you configure the app from the frontend.
+func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
+	v := NewVars()
 
-	if r.Method == "POST" {
-		form := forms.Setup{
-			Username: r.FormValue("username"),
-			Password: r.FormValue("password"),
-			Confirm:  r.FormValue("confirm"),
-		}
-		vars.Form = form
-		err := form.Validate()
-		if err != nil {
-			vars.Error = err
-		} else {
-			// Save the site config.
-			log.Info("Creating default website config file")
-			s := settings.Defaults()
-			s.Save()
-
-			// Re-initialize the cookie store with the new secret key.
-			b.store = sessions.NewCookieStore([]byte(s.Security.SecretKey))
-
-			log.Info("Creating admin account %s", form.Username)
-			user := &users.User{
-				Username: form.Username,
-				Password: form.Password,
-				Admin:    true,
-				Name:     "Administrator",
-			}
-			err := users.Create(user)
-			if err != nil {
-				log.Error("Error: %v", err)
-				vars.Error = err
-			}
-
-			// All set!
-			b.Login(w, r, user)
-			b.Redirect(w, "/admin")
-			return
-		}
-	}
-
-	b.RenderTemplate(w, r, "admin/setup", vars)
+	// Get the current settings.
+	settings, _ := settings.Load()
+	v.Data["s"] = settings
+	b.RenderTemplate(w, r, "admin/settings", v)
 }

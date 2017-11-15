@@ -8,12 +8,6 @@ import (
 	"github.com/kirsle/blog/core/models/users"
 )
 
-type key int
-
-const (
-	userKey key = iota
-)
-
 // Login logs the browser in as the given user.
 func (b *Blog) Login(w http.ResponseWriter, r *http.Request, u *users.User) error {
 	session, err := b.store.Get(r, "session") // TODO session name

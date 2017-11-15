@@ -1,4 +1,6 @@
 {{ define "title" }}Untitled{{ end }}
+{{ define "scripts" }}Default Scripts{{ end }}
+
 {{ define "layout" }}
 <!DOCTYPE html>
 <html lang="en">
@@ -52,7 +54,7 @@
             {{ if .SetupNeeded }}
             <div class="alert alert-success">
                 Your web blog needs to be set up!
-                Please <a href="/admin/setup">click here</a> to
+                Please <a href="/initial-setup">click here</a> to
                 configure your blog.
             </div>
             {{ end }}
@@ -156,6 +158,9 @@
         </div>
     </div>
 </footer>
+
+<script type="text/javascript" src="/js/vue.min.js"></script>
+{{ template "scripts" or "" }}
 
 </body>
 </html>

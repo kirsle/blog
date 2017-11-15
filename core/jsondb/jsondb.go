@@ -33,7 +33,7 @@ func New(root string) *DB {
 
 // Get a document by path and load it into the object `v`.
 func (db *DB) Get(document string, v interface{}) error {
-	log.Debug("GET %s", document)
+	log.Debug("[JsonDB] GET %s", document)
 	if !db.Exists(document) {
 		return ErrNotFound
 	}
@@ -56,7 +56,7 @@ func (db *DB) Get(document string, v interface{}) error {
 
 // Commit writes a JSON object to the database.
 func (db *DB) Commit(document string, v interface{}) error {
-	log.Debug("COMMIT %s", document)
+	log.Debug("[JsonDB] COMMIT %s", document)
 	path := db.toPath(document)
 
 	// Ensure the directory tree is ready.
@@ -73,7 +73,7 @@ func (db *DB) Commit(document string, v interface{}) error {
 
 // Delete removes a JSON document from the database.
 func (db *DB) Delete(document string) error {
-	log.Debug("DELETE %s", document)
+	log.Debug("[JsonDB] DELETE %s", document)
 	path := db.toPath(document)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -106,15 +106,11 @@ func (db *DB) ListAll(path string) ([]string, error) {
 // path: the filesystem path like from toPath().
 func (db *DB) makePath(path string) error {
 	parts := strings.Split(path, string(filepath.Separator))
-	log.Debug("%v", parts)
 	parts = parts[:len(parts)-1] // pop off the filename
-	log.Debug("%v", parts)
 	directory := filepath.Join(parts...)
 
-	log.Debug("Ensure exists: %s (from orig path %s)", directory, path)
-
 	if _, err := os.Stat(directory); err != nil {
-		log.Debug("Create directory: %s", directory)
+		log.Debug("[JsonDB] Create directory: %s", directory)
 		err = os.MkdirAll(directory, 0755)
 		return err
 	}

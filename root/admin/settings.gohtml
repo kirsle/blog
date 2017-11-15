@@ -1,0 +1,154 @@
+{{ define "title" }}Website Settings{{ end }}
+{{ define "content" }}
+<form action="/admin/settings" method="POST">
+<div id="settings-app" class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link" href="#site"
+                    :class="{ active: currentTab === 'site'}"
+                    v-on:click="currentTab = 'site'">
+                    Settings
+                </a>
+            </li>
+            <!-- <li class="nav-item">
+                <a class="nav-link" href="#db"
+                    :class="{ active: currentTab === 'db'}"
+                    v-on:click="currentTab = 'db'">
+                    Database
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#security"
+                    :class="{ active: currentTab === 'security'}"
+                    v-on:click="currentTab = 'security'">
+                    Security
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Hello</a>
+            </li> -->
+        </ul>
+    </div>
+
+    {{ with .Data.s }}
+    <div class="card-body" v-if="currentTab === 'site'">
+        <h3>The Basics</h3>
+
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text"
+                class="form-control"
+                name="title" id="title"
+                value="{{ .Site.Title }}"
+                placeholder="Website Title">
+        </div>
+
+        <div class="form-group">
+            <label for="admin-email">Admin Email</label>
+            <small class="text-muted">For getting notifications about comments, etc.</small>
+            <input type="email"
+                class="form-control"
+                name="admin-email" id="admin-email"
+                value="{{ .Site.AdminEmail }}"
+                placeholder="name@domain.com">
+        </div>
+
+        <h3>Redis Cache</h3>
+
+        <p>
+            Using a <a href="https://redis.io/" target="_blank">Redis</a> cache can
+            boost the performance of the JSON database by caching documents in
+            memory instead of always reading from disk.
+        </p>
+
+        <div class="form-check">
+            <label class="form-check-label">
+                <input type="checkbox"
+                    class="form-check-input"
+                    name="redis-enabled"
+                    value="true"
+                    {{ if .Redis.Enabled }}checked{{ end }}>
+                    Enable Redis
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label for="redis-prefix">Key Prefix</label>
+            <small class="text-muted">(optional)</small>
+            <input type="text"
+                class="form-control"
+                name="redis-prefix" id="redis-prefix"
+                value="{{ .Redis.Prefix }}"
+                placeholder="blog:">
+        </div>
+
+        <div class="form-group">
+            <label for="redis-host">Redis Host</label>
+            <input type="text"
+                class="form-control"
+                name="redis-host" id="redis-host"
+                value="{{ .Redis.Host }}"
+                placeholder="localhost">
+        </div>
+        <div class="form-group">
+            <label for="redis-port">Port</label>
+            <input type="text"
+                class="form-control"
+                name="redis-port" id="redis-port"
+                value="{{ .Redis.Port }}"
+                placeholder="6379">
+        </div>
+        <div class="form-group">
+            <label for="redis-db">DB Number</label>
+            <small class="text-muted">0-15</small>
+            <input type="text"
+                class="form-control"
+                name="redis-db" id="redis-db"
+                value="{{ .Redis.DB }}"
+                placeholder="0">
+        </div>
+        <div class="form-group">
+            <label for="redis-prefix">Key Prefix</label>
+            <small class="text-muted">(optional)</small>
+            <input type="text"
+                class="form-control"
+                name="redis-prefix" id="redis-prefix"
+                value="{{ .Redis.Prefix }}"
+                placeholder="blog:">
+        </div>
+    </div>
+
+    <div class="card-body" v-if="currentTab === 'db'">
+
+    </div>
+
+    <div class="card-body" v-if="currentTab === 'security'">
+        <div class="form-check">
+            <label class="form-check-label">
+                <input type="checkbox"
+                    class="form-check-input"
+                    name="redis-enabled"
+                    value="true"
+                    {{ if .Redis.Enabled }}checked{{ end }}>
+                    Enable Redis
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label for="redis-prefix">Key Prefix</label>
+            <small class="text-muted">(optional)</small>
+            <input type="text"
+                class="form-control"
+                name="redis-prefix" id="redis-prefix"
+                value="{{ .Redis.Prefix }}"
+                placeholder="blog:">
+        </div>
+    </div>
+    {{ end }}
+</div>
+</form>
+{{ end }}
+{{ define "scripts" }}
+<script type="text/javascript" src="/admin/settings.js"></script>
+{{ end }}

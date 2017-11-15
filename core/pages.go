@@ -11,6 +11,7 @@ import (
 // PageHandler is the catch-all route handler, for serving static web pages.
 func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
+	log.Debug("Catch-all page handler invoked for request URI: %s", path)
 
 	// Remove trailing slashes by redirecting them away.
 	if len(path) > 1 && path[len(path)-1] == '/' {
@@ -65,7 +66,14 @@ func (b *Blog) ResolvePath(path string) (Filepath, error) {
 		path = strings.TrimPrefix(path, "/")
 	}
 
-	log.Debug("Resolving filepath for URI: %s", path)
+	// If you need to debug this function, edit this block.
+	debug := func(tmpl string, args ...interface{}) {
+		if false {
+			log.Debug(tmpl, args...)
+		}
+	}
+
+	debug("Resolving filepath for URI: %s", path)
 	for _, root := range []string{b.DocumentRoot, b.UserRoot} {
 		if len(root) == 0 {
 			continue
@@ -78,11 +86,11 @@ func (b *Blog) ResolvePath(path string) (Filepath, error) {
 			log.Error("%v", err)
 		}
 
-		log.Debug("Expected filepath: %s", absPath)
+		debug("Expected filepath: %s", absPath)
 
 		// Found an exact hit?
 		if stat, err := os.Stat(absPath); !os.IsNotExist(err) && !stat.IsDir() {
-			log.Debug("Exact filepath found: %s", absPath)
+			debug("Exact filepath found: %s", absPath)
 			return Filepath{path, relPath, absPath}, nil
 		}
 
@@ -98,7 +106,7 @@ func (b *Blog) ResolvePath(path string) (Filepath, error) {
 		for _, suffix := range suffixes {
 			test := absPath + suffix
 			if stat, err := os.Stat(test); !os.IsNotExist(err) && !stat.IsDir() {
-				log.Debug("Filepath found via suffix %s: %s", suffix, test)
+				debug("Filepath found via suffix %s: %s", suffix, test)
 				return Filepath{path + suffix, relPath + suffix, test}, nil
 			}
 		}

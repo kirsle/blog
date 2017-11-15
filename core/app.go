@@ -53,30 +53,25 @@ func New(documentRoot, userRoot string) *Blog {
 
 	// Initialize the router.
 	r := mux.NewRouter()
-	blog.r = r
-
-	// Blog setup.
-	r.HandleFunc("/admin/setup", blog.SetupHandler)
-
-	// Admin pages that require a logged-in user.
-	admin := mux.NewRouter()
-	admin.HandleFunc("/admin", blog.AdminHandler)
-	r.PathPrefix("/admin").Handler(negroni.New(
-		negroni.HandlerFunc(blog.LoginRequired),
-		negroni.Wrap(admin),
-	))
+	r.HandleFunc("/initial-setup", blog.SetupHandler)
 	r.HandleFunc("/login", blog.LoginHandler)
 	r.HandleFunc("/logout", blog.LogoutHandler)
-	r.HandleFunc("/", blog.PageHandler)
+	blog.AdminRoutes(r)
+
+	r.PathPrefix("/").HandlerFunc(blog.PageHandler)
 	r.NotFoundHandler = http.HandlerFunc(blog.PageHandler)
 
 	n := negroni.New(
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
+		negroni.HandlerFunc(blog.SessionLoader),
+		negroni.HandlerFunc(blog.AuthMiddleware),
 	)
-	blog.n = n
-	n.Use(negroni.HandlerFunc(blog.AuthMiddleware))
 	n.UseHandler(r)
+
+	// Keep references handy elsewhere in the app.
+	blog.n = n
+	blog.r = r
 
 	return blog
 }

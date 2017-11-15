@@ -25,7 +25,22 @@ type Vars struct {
 	Message string
 	Flash   string
 	Error   error
+	Data    map[interface{}]interface{}
 	Form    forms.Form
+}
+
+// NewVars initializes a Vars struct with the custom Data map initialized.
+// You may pass in an initial value for this map if you want.
+func NewVars(data ...map[interface{}]interface{}) *Vars {
+	var value map[interface{}]interface{}
+	if len(data) > 0 {
+		value = data[0]
+	} else {
+		value = make(map[interface{}]interface{})
+	}
+	return &Vars{
+		Data: value,
+	}
 }
 
 // LoadDefaults combines template variables with default, globally available vars.
@@ -36,7 +51,7 @@ func (v *Vars) LoadDefaults(r *http.Request) {
 		s = settings.Defaults()
 	}
 
-	if s.Initialized == false && !strings.HasPrefix(r.URL.Path, "/admin/setup") {
+	if s.Initialized == false && !strings.HasPrefix(r.URL.Path, "/initial-setup") {
 		v.SetupNeeded = true
 	}
 	v.Title = s.Site.Title

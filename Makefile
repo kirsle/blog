@@ -32,3 +32,9 @@ test:
 .PHONY: clean
 clean:
 	rm -rf bin dist
+
+# `make hardclean` cleans EVERY THING, including root/.private, resetting
+# your database in the local dev environment. Be careful!
+.PHONY: hardclean
+hardclean: clean
+	rm -rf root/.private
