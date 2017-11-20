@@ -26,7 +26,7 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Form: forms.Setup{},
 	}
 
-	if r.Method == "POST" {
+	if r.Method == http.MethodPost {
 		form := &forms.Login{
 			Username: r.FormValue("username"),
 			Password: r.FormValue("password"),
@@ -42,7 +42,7 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 				vars.Error = errors.New("bad username or password")
 			} else {
 				// Login OK!
-				vars.Flash = "Login OK!"
+				b.Flash(w, r, "Login OK!")
 				b.Login(w, r, user)
 
 				// A next URL given? TODO: actually get to work

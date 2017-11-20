@@ -2,8 +2,10 @@ package core
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/kirsle/blog/core/forms"
 	"github.com/kirsle/blog/core/models/settings"
 	"github.com/urfave/negroni"
 )
@@ -32,5 +34,38 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the current settings.
 	settings, _ := settings.Load()
 	v.Data["s"] = settings
+
+	if r.Method == http.MethodPost {
+		redisPort, _ := strconv.Atoi(r.FormValue("redis-port"))
+		redisDB, _ := strconv.Atoi(r.FormValue("redis-db"))
+		form := &forms.Settings{
+			Title:        r.FormValue("title"),
+			AdminEmail:   r.FormValue("admin-email"),
+			RedisEnabled: r.FormValue("redis-enabled") == "true",
+			RedisHost:    r.FormValue("redis-host"),
+			RedisPort:    redisPort,
+			RedisDB:      redisDB,
+			RedisPrefix:  r.FormValue("redis-prefix"),
+		}
+
+		// Copy form values into the settings struct for display, in case of
+		// any validation errors.
+		settings.Site.Title = form.Title
+		settings.Site.AdminEmail = form.AdminEmail
+		settings.Redis.Enabled = form.RedisEnabled
+		settings.Redis.Host = form.RedisHost
+		settings.Redis.Port = form.RedisPort
+		settings.Redis.DB = form.RedisDB
+		settings.Redis.Prefix = form.RedisPrefix
+		err := form.Validate()
+		if err != nil {
+			v.Error = err
+		} else {
+			// Save the settings.
+			settings.Save()
+			b.FlashAndReload(w, r, "Settings have been saved!")
+			return
+		}
+	}
 	b.RenderTemplate(w, r, "admin/settings", v)
 }

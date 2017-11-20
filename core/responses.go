@@ -1,8 +1,28 @@
 package core
 
 import (
+	"fmt"
 	"net/http"
 )
+
+// Flash adds a flash message to the user's session.
+func (b *Blog) Flash(w http.ResponseWriter, r *http.Request, message string, args ...interface{}) {
+	session := b.Session(r)
+	session.AddFlash(fmt.Sprintf(message, args...))
+	session.Save(r, w)
+}
+
+// FlashAndRedirect flashes and redirects in one go.
+func (b *Blog) FlashAndRedirect(w http.ResponseWriter, r *http.Request, location, message string, args ...interface{}) {
+	b.Flash(w, r, message, args...)
+	b.Redirect(w, location)
+}
+
+// FlashAndReload flashes and sends a redirect to the same path.
+func (b *Blog) FlashAndReload(w http.ResponseWriter, r *http.Request, message string, args ...interface{}) {
+	b.Flash(w, r, message, args...)
+	b.Redirect(w, r.URL.Path)
+}
 
 // Redirect sends an HTTP redirect response.
 func (b *Blog) Redirect(w http.ResponseWriter, location string) {

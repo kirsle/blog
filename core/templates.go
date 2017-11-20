@@ -23,7 +23,7 @@ type Vars struct {
 
 	// Common template variables.
 	Message string
-	Flash   string
+	Flashes []string
 	Error   error
 	Data    map[interface{}]interface{}
 	Form    forms.Form
@@ -44,7 +44,7 @@ func NewVars(data ...map[interface{}]interface{}) *Vars {
 }
 
 // LoadDefaults combines template variables with default, globally available vars.
-func (v *Vars) LoadDefaults(r *http.Request) {
+func (v *Vars) LoadDefaults(b *Blog, w http.ResponseWriter, r *http.Request) {
 	// Get the site settings.
 	s, err := settings.Load()
 	if err != nil {
@@ -57,6 +57,16 @@ func (v *Vars) LoadDefaults(r *http.Request) {
 	v.Title = s.Site.Title
 	v.Path = r.URL.Path
 
+	// Add any flashed messages from the endpoint controllers.
+	session := b.Session(r)
+	if flashes := session.Flashes(); len(flashes) > 0 {
+		for _, flash := range flashes {
+			_ = flash
+			v.Flashes = append(v.Flashes, flash.(string))
+		}
+		session.Save(r, w)
+	}
+
 	ctx := r.Context()
 	if user, ok := ctx.Value(userKey).(*users.User); ok {
 		if user.ID > 0 {
@@ -68,7 +78,7 @@ func (v *Vars) LoadDefaults(r *http.Request) {
 
 // TemplateVars is an interface that describes the template variable struct.
 type TemplateVars interface {
-	LoadDefaults(*http.Request)
+	LoadDefaults(*Blog, http.ResponseWriter, *http.Request)
 }
 
 // RenderTemplate responds with an HTML template.
@@ -87,9 +97,15 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 		return err
 	}
 
+	// Useful template functions.
+	log.Error("HERE!!!")
+	t := template.New(filepath.Absolute).Funcs(template.FuncMap{
+		"StringsJoin": strings.Join,
+	})
+
 	// Parse the template files. The layout comes first because it's the wrapper
 	// and allows the filepath template to set the page title.
-	t, err := template.ParseFiles(layout.Absolute, filepath.Absolute)
+	t, err = t.ParseFiles(layout.Absolute, filepath.Absolute)
 	if err != nil {
 		log.Error(err.Error())
 		return err
@@ -99,7 +115,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	if vars == nil {
 		vars = &Vars{}
 	}
-	vars.LoadDefaults(r)
+	vars.LoadDefaults(b, w, r)
 
 	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
 	err = t.ExecuteTemplate(w, "layout", vars)

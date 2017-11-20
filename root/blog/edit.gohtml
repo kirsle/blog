@@ -1,0 +1,149 @@
+{{ define "title" }}Update Blog{{ end }}
+{{ define "content" }}
+<form action="/blog/edit" method="POST">
+{{ if .Data.preview }}
+<div class="card">
+    <div class="card-title">
+        Preview
+    </div>
+    <div class="card-body">
+        {{ .Data.preview }}
+    </div>
+</div>
+{{ end }}
+
+{{ with .Data.post }}
+<div class="card">
+    <div class="card-body">
+        <h3>Update Blog</h3>
+
+        {{ . }}
+
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text"
+                class="form-control"
+                name="title"
+                value="{{ .Title }}"
+                placeholder="Post Title"
+                autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="fragment">URL Fragment</label>
+            <small class="text-muted">
+                You can leave this blank if this is a new post. It will pick a
+                default value based on the title.
+            </small>
+            <input type="text"
+                class="form-control"
+                name="fragment"
+                value="{{ .Fragment }}"
+                placeholder="url-fragment-for-blog-entry"
+                autocomplete="false">
+        </div>
+
+        <div class="form-group">
+            <label for="body">Body</label>
+
+            <div class="form-check form-check-inline">
+                <label class="form-check-label">
+                    <input type="radio"
+                        class="form-check-input"
+                        name="content-type"
+                        value="markdown"
+                        {{ if eq .ContentType "markdown" }}checked{{ end }}
+                    > Markdown
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <label class="form-check-label">
+                    <input type="radio"
+                        class="form-check-input"
+                        name="content-type"
+                        value="markdown+html"
+                        {{ if eq .ContentType "markdown+html" }}checked{{ end }}
+                    > Markdown + HTML
+                </label>
+            </div>
+            <div class="form-check form-check-inline">
+                <label class="form-check-label">
+                    <input type="radio"
+                        class="form-check-input"
+                        name="content-type"
+                        value="html"
+                        {{ if eq .ContentType "html" }}checked{{ end }}
+                    > Raw HTML
+                </label>
+            </div>
+
+            <textarea class="form-control"
+                cols="80"
+                rows="12"
+                name="body"
+                placeholder="Post body goes here">{{ .Body }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="tags">Tags</label>
+            <input type="text"
+                class="form-control"
+                name="tags"
+                placeholder="Comma, Separated, List"
+                value="{{ StringsJoin .Tags ", " }}"
+                autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="privacy">Privacy</label>
+            <select name="privacy" class="form-control">
+                <option value="public"{{ if eq .Privacy "public" }} selected{{ end }}>Public: everybody can see this post</option>
+                <option value="private"{{ if eq .Privacy "private" }} selected{{ end }}>Private: only site admins can see this post</option>
+                <option value="draft"{{ if eq .Privacy "draft" }} selected{{ end }}>Draft: don't show this post on the blog anywhere</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Options</label>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input type="checkbox"
+                        class="form-check-label"
+                        name="sticky"
+                        value="true"
+                        {{ if .Sticky }}checked{{ end }}
+                    > Make this post sticky (always on top)
+                </label>
+            </div>
+            <div class="form-check">
+                <label class="form-check-label">
+                    <input type="checkbox"
+                        class="form-check-label"
+                        name="enable-comments"
+                        value="true"
+                        {{ if .EnableComments }}checked{{ end }}
+                    > Enable comments on this post
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <button type="submit"
+                class="btn btn-success"
+                name="submit"
+                value="preview">
+                Preview
+            </button>
+            <button type="submit"
+                class="btn btn-primary"
+                name="submit"
+                value="post">
+                Publish
+            </button>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+</form>
+{{ end }}

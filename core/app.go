@@ -57,6 +57,7 @@ func New(documentRoot, userRoot string) *Blog {
 	r.HandleFunc("/login", blog.LoginHandler)
 	r.HandleFunc("/logout", blog.LogoutHandler)
 	blog.AdminRoutes(r)
+	blog.BlogRoutes(r)
 
 	r.PathPrefix("/").HandlerFunc(blog.PageHandler)
 	r.NotFoundHandler = http.HandlerFunc(blog.PageHandler)

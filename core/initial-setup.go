@@ -15,7 +15,7 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 		Form: forms.Setup{},
 	}
 
-	if r.Method == "POST" {
+	if r.Method == http.MethodPost {
 		form := forms.Setup{
 			Username: r.FormValue("username"),
 			Password: r.FormValue("password"),
@@ -49,7 +49,7 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 
 			// All set!
 			b.Login(w, r, user)
-			b.Redirect(w, "/admin")
+			b.FlashAndRedirect(w, r, "/admin", "Admin user created and logged in.")
 			return
 		}
 	}

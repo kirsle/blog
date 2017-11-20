@@ -1,5 +1,5 @@
 {{ define "title" }}Untitled{{ end }}
-{{ define "scripts" }}Default Scripts{{ end }}
+{{ define "scripts" }}{{ end }}
 
 {{ define "layout" }}
 <!DOCTYPE html>
@@ -59,9 +59,9 @@
             </div>
             {{ end }}
 
-            {{ if .Flash }}
+            {{ range .Flashes }}
             <div class="alert alert-success">
-                {{ .Flash }}
+                {{ . }}
             </div>
             {{ end }}
 
@@ -159,7 +159,7 @@
     </div>
 </footer>
 
-<script type="text/javascript" src="/js/vue.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
 {{ template "scripts" or "" }}
 
 </body>

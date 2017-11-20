@@ -30,6 +30,12 @@ h6, .h6 {
 .form-group label {
     font-weight: bold;
 }
+label.form-check-label {
+    font-weight: normal;
+}
+button {
+    cursor: pointer;
+}
 
 /*
  * Top nav
