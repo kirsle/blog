@@ -1,0 +1,24 @@
+{{ define "title" }}Archive{{ end }}
+{{ define "content" }}
+
+<h1>Archive</h1>
+
+{{ range .Data.Archive }}
+    <h3>{{ .Date.Format "January, 2006" }}</h3>
+
+    <ul class="list-unstyled">
+    {{ range .Posts }}
+        <li class="list-item">
+            <a href="/{{ .Fragment }}">{{ .Title }}</a>
+            <small class="blog-meta">
+                {{ .Created.Format "Jan 02 2006" }}
+                {{ if ne .Privacy "public" }}
+                    <span class="blog-{{ .Privacy }}">[{{ .Privacy }}]</span>
+                {{ end }}
+            </small>
+        </li>
+    {{ end }}
+    </ul>
+{{ end }}
+
+{{ end }}

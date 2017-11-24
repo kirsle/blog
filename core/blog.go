@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/models/posts"
@@ -24,10 +25,18 @@ type PostMeta struct {
 	Snipped   bool
 }
 
+// Archive holds data for a piece of the blog archive.
+type Archive struct {
+	Label string
+	Date  time.Time
+	Posts []posts.Post
+}
+
 // BlogRoutes attaches the blog routes to the app.
 func (b *Blog) BlogRoutes(r *mux.Router) {
 	// Public routes
 	r.HandleFunc("/blog", b.BlogIndex)
+	r.HandleFunc("/archive", b.BlogArchive)
 	r.HandleFunc("/tagged/{tag}", b.Tagged)
 
 	// Login-required routers.
@@ -201,6 +210,53 @@ func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
 
 	v.Data["View"] = view
 	b.RenderTemplate(w, r, "blog/index", v)
+}
+
+// BlogArchive summarizes all blog entries in an archive view.
+func (b *Blog) BlogArchive(w http.ResponseWriter, r *http.Request) {
+	idx, err := posts.GetIndex()
+	if err != nil {
+		b.BadRequest(w, r, "Error getting blog index")
+		return
+	}
+
+	// Group posts by calendar month.
+	var months []string
+	byMonth := map[string]*Archive{}
+	for _, post := range idx.Posts {
+		// Exclude certain posts
+		if (post.Privacy == PRIVATE || post.Privacy == UNLISTED) && !b.LoggedIn(r) {
+			continue
+		} else if post.Privacy == DRAFT {
+			continue
+		}
+
+		label := post.Created.Format("2006-02")
+		if _, ok := byMonth[label]; !ok {
+			months = append(months, label)
+			byMonth[label] = &Archive{
+				Label: label,
+				Date:  time.Date(post.Created.Year(), post.Created.Month(), post.Created.Day(), 0, 0, 0, 0, time.UTC),
+				Posts: []posts.Post{},
+			}
+		}
+		byMonth[label].Posts = append(byMonth[label].Posts, post)
+	}
+
+	// Sort the months.
+	sort.Sort(sort.Reverse(sort.StringSlice(months)))
+
+	// Prepare the response.
+	result := []*Archive{}
+	for _, label := range months {
+		sort.Sort(sort.Reverse(posts.ByUpdated(byMonth[label].Posts)))
+		result = append(result, byMonth[label])
+	}
+
+	v := NewVars(map[interface{}]interface{}{
+		"Archive": result,
+	})
+	b.RenderTemplate(w, r, "blog/archive", v)
 }
 
 // viewPost is the underlying implementation of the handler to view a blog
