@@ -2,8 +2,10 @@ package core
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/models/users"
 )
@@ -40,25 +42,54 @@ func (b *Blog) Session(r *http.Request) *sessions.Session {
 	return session
 }
 
-// AuthMiddleware loads the user's authentication state.
-func (b *Blog) AuthMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	session := b.Session(r)
-	log.Debug("AuthMiddleware() -- session values: %v", session.Values)
-	if loggedIn, ok := session.Values["logged-in"].(bool); ok && loggedIn {
-		// They seem to be logged in. Get their user object.
-		id := session.Values["user-id"].(int)
-		u, err := users.Load(id)
-		if err != nil {
-			log.Error("Error loading user ID %d from session: %v", id, err)
-			next(w, r)
+// CSRFMiddleware enforces CSRF tokens on all POST requests.
+func (b *Blog) CSRFMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	if r.Method == "POST" {
+		session := b.Session(r)
+		token, ok := session.Values["csrf"].(string)
+		if !ok || token != r.FormValue("_csrf") {
+			b.Forbidden(w, r, "Failed to validate CSRF token. Please try your request again.")
 			return
 		}
+	}
 
-		ctx := context.WithValue(r.Context(), userKey, u)
-		next(w, r.WithContext(ctx))
+	next(w, r)
+}
+
+// GenerateCSRFToken generates a CSRF token for the user and puts it in their session.
+func (b *Blog) GenerateCSRFToken(w http.ResponseWriter, r *http.Request, session *sessions.Session) string {
+	token, ok := session.Values["csrf"].(string)
+	if !ok {
+		token := uuid.New()
+		session.Values["csrf"] = token.String()
+		session.Save(r, w)
+	}
+	return token
+}
+
+// CurrentUser returns the current user's object.
+func (b *Blog) CurrentUser(r *http.Request) (*users.User, error) {
+	session := b.Session(r)
+	if loggedIn, ok := session.Values["logged-in"].(bool); ok && loggedIn {
+		id := session.Values["user-id"].(int)
+		u, err := users.LoadReadonly(id)
+		return u, err
+	}
+
+	return &users.User{}, errors.New("not authenticated")
+}
+
+// AuthMiddleware loads the user's authentication state.
+func (b *Blog) AuthMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	u, err := b.CurrentUser(r)
+	if err != nil {
+		log.Error("Error loading user from session: %v", err)
+		next(w, r)
 		return
 	}
-	next(w, r)
+
+	ctx := context.WithValue(r.Context(), userKey, u)
+	next(w, r.WithContext(ctx))
 }
 
 // LoginRequired is a middleware that requires a logged-in user.

@@ -1,0 +1,27 @@
+{{ define "title" }}{{ .Data.Post.Title }}{{ end }}
+{{ define "content" }}
+
+{{ $p := .Data.Post }}
+{{ RenderPost $p false }}
+
+{{ if and .LoggedIn .CurrentUser.Admin }}
+    <small>
+        <strong>Admin Actions:</strong>
+        [
+        <a href="/blog/edit?id={{ $p.ID }}">Edit</a> |
+        <a href="/blog/delete?id={{ $p.ID }}">Delete</a>
+        ]
+    </small>
+{{ end }}
+
+{{ if $p.EnableComments }}
+    <h2 class="mt-4">Comments</h2>
+
+    TBD.
+{{ else }}
+    <hr>
+    <em>Comments are disabled on this post.</em>
+{{ end }}
+
+
+{{ end }}

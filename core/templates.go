@@ -20,6 +20,8 @@ type Vars struct {
 	Path        string
 	LoggedIn    bool
 	CurrentUser *users.User
+	CSRF        string
+	Request     *http.Request
 
 	// Common template variables.
 	Message string
@@ -54,6 +56,7 @@ func (v *Vars) LoadDefaults(b *Blog, w http.ResponseWriter, r *http.Request) {
 	if s.Initialized == false && !strings.HasPrefix(r.URL.Path, "/initial-setup") {
 		v.SetupNeeded = true
 	}
+	v.Request = r
 	v.Title = s.Site.Title
 	v.Path = r.URL.Path
 
@@ -66,6 +69,8 @@ func (v *Vars) LoadDefaults(b *Blog, w http.ResponseWriter, r *http.Request) {
 		}
 		session.Save(r, w)
 	}
+
+	v.CSRF = b.GenerateCSRFToken(w, r, session)
 
 	ctx := r.Context()
 	if user, ok := ctx.Value(userKey).(*users.User); ok {
@@ -101,6 +106,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	log.Error("HERE!!!")
 	t := template.New(filepath.Absolute).Funcs(template.FuncMap{
 		"StringsJoin": strings.Join,
+		"RenderPost":  b.RenderPost,
 	})
 
 	// Parse the template files. The layout comes first because it's the wrapper

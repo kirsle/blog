@@ -7,8 +7,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/core/models/posts"
 	"github.com/kirsle/blog/core/models/settings"
 	"github.com/kirsle/blog/core/models/users"
+	"github.com/shurcooL/github_flavored_markdown/gfmstyle"
 	"github.com/urfave/negroni"
 )
 
@@ -23,6 +25,9 @@ type Blog struct {
 
 	DB *jsondb.DB
 
+	// Helper singletone
+	Posts *PostHelper
+
 	// Web app objects.
 	n     *negroni.Negroni // Negroni middleware manager
 	r     *mux.Router      // Router
@@ -36,6 +41,7 @@ func New(documentRoot, userRoot string) *Blog {
 		UserRoot:     userRoot,
 		DB:           jsondb.New(filepath.Join(userRoot, ".private")),
 	}
+	blog.Posts = InitPostHelper(blog)
 
 	// Load the site config, or start with defaults if not found.
 	settings.DB = blog.DB
@@ -49,6 +55,7 @@ func New(documentRoot, userRoot string) *Blog {
 	users.HashCost = config.Security.HashCost
 
 	// Initialize the rest of the models.
+	posts.DB = blog.DB
 	users.DB = blog.DB
 
 	// Initialize the router.
@@ -59,6 +66,9 @@ func New(documentRoot, userRoot string) *Blog {
 	blog.AdminRoutes(r)
 	blog.BlogRoutes(r)
 
+	// GitHub Flavored Markdown CSS.
+	r.Handle("/css/gfm.css", http.StripPrefix("/css", http.FileServer(gfmstyle.Assets)))
+
 	r.PathPrefix("/").HandlerFunc(blog.PageHandler)
 	r.NotFoundHandler = http.HandlerFunc(blog.PageHandler)
 
@@ -66,6 +76,7 @@ func New(documentRoot, userRoot string) *Blog {
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
 		negroni.HandlerFunc(blog.SessionLoader),
+		negroni.HandlerFunc(blog.CSRFMiddleware),
 		negroni.HandlerFunc(blog.AuthMiddleware),
 	)
 	n.UseHandler(r)

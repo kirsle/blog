@@ -19,6 +19,12 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Handle the root URI with the blog index.
+	if path == "/" {
+		b.BlogIndex(w, r)
+		return
+	}
+
 	// Restrict special paths.
 	if strings.HasPrefix(strings.ToLower(path), "/.") {
 		b.Forbidden(w, r)
@@ -28,7 +34,11 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	// Search for a file that matches their URL.
 	filepath, err := b.ResolvePath(path)
 	if err != nil {
-		b.NotFound(w, r, "The page you were looking for was not found.")
+		// See if it resolves as a blog entry.
+		err = b.viewPost(w, r, path)
+		if err != nil {
+			b.NotFound(w, r, "The page you were looking for was not found.")
+		}
 		return
 	}
 

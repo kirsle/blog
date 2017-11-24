@@ -50,9 +50,10 @@ func (b *Blog) NotFound(w http.ResponseWriter, r *http.Request, message ...strin
 
 // Forbidden sends an HTTP 403 Forbidden response.
 func (b *Blog) Forbidden(w http.ResponseWriter, r *http.Request, message ...string) {
-	log.Error("HERE 3")
 	w.WriteHeader(http.StatusForbidden)
-	err := b.RenderTemplate(w, r, ".errors/403", nil)
+	err := b.RenderTemplate(w, r, ".errors/403", &Vars{
+		Message: message[0],
+	})
 	if err != nil {
 		log.Error(err.Error())
 		w.Write([]byte("Unrecoverable template error for Forbidden()"))

@@ -141,7 +141,7 @@ func (db *DB) list(path string, recursive bool) ([]string, error) {
 		}
 
 		if strings.HasSuffix(filePath, ".json") {
-			name := strings.TrimSuffix(filePath, ".json")
+			name := strings.TrimSuffix(dbPath, ".json")
 			docs = append(docs, name)
 		}
 	}

@@ -25,6 +25,10 @@ type User struct {
 	Admin    bool   `json:"admin"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
+
+	// Whether the user was loaded in read-only mode (no password), so they
+	// can't be saved without a password.
+	readonly bool
 }
 
 // ByName model maps usernames to their IDs.
@@ -56,6 +60,13 @@ func Create(u *User) error {
 	// TODO: check existing
 
 	return u.Save()
+}
+
+// DeletedUser returns a User object to represent a deleted (non-existing) user.
+func DeletedUser() *User {
+	return &User{
+		Username: "[deleted]",
+	}
 }
 
 // CheckAuth tests a login with a username and password.
@@ -118,8 +129,20 @@ func Load(id int) (*User, error) {
 	return u, err
 }
 
+// LoadReadonly loads a user for read-only use, so the Password is masked.
+func LoadReadonly(id int) (*User, error) {
+	u, err := Load(id)
+	u.Password = ""
+	u.readonly = true
+	return u, err
+}
+
 // Save the user.
 func (u *User) Save() error {
+	if u.readonly {
+		return errors.New("user is read-only")
+	}
+
 	// Sanity check that we have an ID.
 	if u.ID == 0 {
 		return errors.New("can't save a user with no ID")

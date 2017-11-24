@@ -1,6 +1,7 @@
 {{ define "title" }}Website Settings{{ end }}
 {{ define "content" }}
 <form action="/admin/settings" method="POST">
+<input type="hidden" name="_csrf" value="{{ .CSRF }}">
 <div class="card">
     {{ with .Data.s }}
     <div class="card-body">

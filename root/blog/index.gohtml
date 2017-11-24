@@ -1,0 +1,46 @@
+{{ define "title" }}Welcome{{ end }}
+{{ define "content" }}
+
+<div class="row">
+    <div class="col text-right">
+        <ul class="list-inline">
+        {{ if .Data.PreviousPage }}
+            <li class="list-inline-item"><a href="/?page={{ .Data.PreviousPage }}">Earlier</a></li>
+        {{ end }}
+        {{ if .Data.NextPage }}
+            <li class="list-inline-item"><a href="/?page={{ .Data.NextPage }}">Older</a></li>
+        {{ end }}
+    </div>
+</div>
+
+{{ range .Data.View }}
+    {{ $p := .Post }}
+    {{ RenderPost $p true }}
+
+    {{ if and $.LoggedIn $.CurrentUser.Admin }}
+    <div class="mb-4">
+        <small>
+            <strong>Admin Actions:</strong>
+            [
+            <a href="/blog/edit?id={{ $p.ID }}">Edit</a> |
+            <a href="/blog/delete?id={{ $p.ID }}">Delete</a>
+            ]
+        </small>
+    </div>
+    {{ end }}
+    <hr>
+{{ end }}
+
+<div class="row">
+    <div class="col text-right">
+        <ul class="list-inline">
+        {{ if .Data.PreviousPage }}
+            <li class="list-inline-item"><a href="/?page={{ .Data.PreviousPage }}">Earlier</a></li>
+        {{ end }}
+        {{ if .Data.NextPage }}
+            <li class="list-inline-item"><a href="/?page={{ .Data.NextPage }}">Older</a></li>
+        {{ end }}
+    </div>
+</div>
+
+{{ end }}

@@ -1,0 +1,24 @@
+/*
+ * Generally useful blog styles.
+ */
+
+/* Styles for the blog title <h1> */
+.blog-title {
+    display: block;
+}
+a.blog-title {
+    text-decoration: underline;
+}
+
+/* The blog entry publish date */
+.blog-meta {
+    font-style: italic;
+    font-size: smaller;
+    margin-bottom: 2rem;
+}
+
+/* Code blocks treated as <pre> tags */
+.markdown code {
+    display: block;
+    white-space: pre-line;
+}

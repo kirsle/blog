@@ -1,0 +1,41 @@
+{{ $a := .Author }}
+{{ $p := .Post }}
+
+{{ if .IndexView }}
+    <a class="h1 blog-title" href="/{{ $p.Fragment }}">{{ $p.Title }}</a>
+{{ else }}
+    <h1 class="blog-title">{{ $p.Title }}</h1>
+{{ end }}
+
+<div class="blog-meta">
+    <span title="{{ $p.Created.Format "Jan 2 2006 @ 15:04:05 MST" }}">
+        {{ $p.Created.Format "January 2, 2006" }}
+    </span>
+    {{ if $p.Updated.After $p.Created }}
+        <span title="{{ $p.Updated.Format "Jan 2 2006 @ 15:04:05 MST" }}">
+            (updated {{ $p.Updated.Format "January 2, 2006" }})
+        </span>
+    {{ end }}
+    by <a href="/u/{{ $a.Username }}">{{ or $a.Name $a.Username }}</a>
+</div>
+
+<div class="markdown mb-4">
+    {{ .Rendered }}
+
+    {{ if .Snipped }}
+    <p>
+        <a href="/{{ $p.Fragment }}#snip">Read more...</a>
+    </p>
+    {{ end }}
+</div>
+
+{{ if not .IndexView }}<hr>{{ end }}
+
+{{ if $p.Tags }}
+    <em class="text-muted float-left pr-3">Tags:</em>
+    <ul class="list-inline">
+    {{ range $p.Tags }}
+        <li class="list-inline-item"><a href="/tagged/{{ . }}">{{ . }}</a></li>
+    {{ end }}
+    </ul>
+{{ end }}

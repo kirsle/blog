@@ -1,0 +1,15 @@
+{{ define "title" }}Delete Entry{{ end }}
+{{ define "content" }}
+<form action="/blog/delete" method="POST">
+<input type="hidden" name="_csrf" value="{{ .CSRF }}">
+<input type="hidden" name="id" value="{{ .Data.Post.ID }}">
+
+<h1>Delete Post</h1>
+
+<p>Are you sure you want to delete <strong>{{ .Data.Post.Title }}</strong>?</p>
+
+<button type="submit" class="btn btn-primary">Delete Post</button>
+<a href="/{{ .Data.Post.Fragment }}" class="btn btn-secondary">Cancel</a>
+
+</form>
+{{ end }}

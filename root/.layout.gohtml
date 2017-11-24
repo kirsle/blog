@@ -1,4 +1,4 @@
-{{ define "title" }}Untitled{{ end }}
+{{ define "title" }}WTF?{{ end }}
 {{ define "scripts" }}{{ end }}
 
 {{ define "layout" }}
@@ -8,11 +8,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <title>{{ template "title" or "Untitled" }} - {{ .Title }}</title>
+    <title>{{ template "title" . }} - {{ .Title }}</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/bluez/theme.css">
+
+    <link rel="stylesheet" href="/css/blog-core.css">
+    <!-- <link rel="stylesheet" href="/css/gfm.css"> -->
 </head>
 <body>
 
