@@ -16,6 +16,12 @@ a.blog-title {
     font-size: smaller;
     margin-bottom: 2rem;
 }
+.blog-meta .blog-private, .blog-meta .blog-unlisted {
+    color: #F00;
+}
+.blog-meta .blog-draft {
+    color: #909;
+}
 
 /* Code blocks treated as <pre> tags */
 .markdown code {

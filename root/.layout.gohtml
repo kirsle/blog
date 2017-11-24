@@ -82,19 +82,36 @@
                 <div class="card-body">
                     <h4 class="card-title">About</h4>
 
-                    {{ if .LoggedIn }}
-                        Hello, {{ .CurrentUser.Username }}.<br>
-                        <a href="/logout">Log out</a><br>
-                        {{ if .CurrentUser.Admin }}
-                        <a href="/admin">Admin center</a>
-                        {{ end }}
-                    {{ else }}
-                        <a href="/login">Log in</a>
-                    {{ end }}
-
                     <p>Hello, world!</p>
                 </div>
             </div>
+
+            {{ if .LoggedIn }}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="cart-title">Control Center</h4>
+
+                    <p>
+                        Logged in as: <a href="/u/{{ .CurrentUser.Username }}">{{ .CurrentUser.Username }}</a>
+                    </p>
+
+                    <ul class="list-unstyled">
+                        {{ if .CurrentUser.Admin }}
+                        <li class="list-item"><a href="/admin">Admin Center</a></li>
+                        {{ end }}
+                        <li class="list-item"><a href="/logout">Log out</a></li>
+                    </ul>
+
+                    <h5>Manage Blog</h5>
+
+                    <ul class="list-unstyled">
+                        <li class="list-item"><a href="/blog/edit">Post Blog Entry</a></li>
+                        <li class="list-item"><a href="/blog/drafts">View Drafts</a></li>
+                        <li class="list-item"><a href="/blog/private">View Private</a></li>
+                    </ul>
+                </div>
+            </div>
+            {{ end }}
 
             <div class="card mb-4">
                 <div class="card-body">
@@ -153,6 +170,15 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#">Back to top</a>
                     </li>
+                    {{ if .LoggedIn }}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Log out</a>
+                    </li>
+                    {{ else }}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Log in</a>
+                    </li>
+                    {{ end }}
                 </ul>
             </div>
             <div class="col-4">

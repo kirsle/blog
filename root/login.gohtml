@@ -4,6 +4,7 @@
 
 <form name="login" action="/login" method="POST">
     <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+    <input type="hidden" name="next" value="{{ .Data.NextURL }}">
     <div class="row">
         <div class="col">
             <input type="text" name="username" class="form-control" placeholder="Username">

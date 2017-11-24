@@ -61,16 +61,6 @@
                     <input type="radio"
                         class="form-check-input"
                         name="content-type"
-                        value="markdown+html"
-                        {{ if eq .ContentType "markdown+html" }}checked{{ end }}
-                    > Markdown + HTML
-                </label>
-            </div>
-            <div class="form-check form-check-inline">
-                <label class="form-check-label">
-                    <input type="radio"
-                        class="form-check-input"
-                        name="content-type"
                         value="html"
                         {{ if eq .ContentType "html" }}checked{{ end }}
                     > Raw HTML
@@ -99,6 +89,7 @@
             <select name="privacy" class="form-control">
                 <option value="public"{{ if eq .Privacy "public" }} selected{{ end }}>Public: everybody can see this post</option>
                 <option value="private"{{ if eq .Privacy "private" }} selected{{ end }}>Private: only site admins can see this post</option>
+                <option value="unlisted"{{ if eq .Privacy "unlisted" }} selected{{ end }}>Unlisted: only those with the direct link can see it</option>
                 <option value="draft"{{ if eq .Privacy "draft" }} selected{{ end }}>Draft: don't show this post on the blog anywhere</option>
             </select>
         </div>

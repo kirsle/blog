@@ -60,6 +60,10 @@ func (v *Vars) LoadDefaults(b *Blog, w http.ResponseWriter, r *http.Request) {
 	v.Title = s.Site.Title
 	v.Path = r.URL.Path
 
+	user, err := b.CurrentUser(r)
+	v.CurrentUser = user
+	v.LoggedIn = err == nil
+
 	// Add any flashed messages from the endpoint controllers.
 	session := b.Session(r)
 	if flashes := session.Flashes(); len(flashes) > 0 {
@@ -71,14 +75,6 @@ func (v *Vars) LoadDefaults(b *Blog, w http.ResponseWriter, r *http.Request) {
 	}
 
 	v.CSRF = b.GenerateCSRFToken(w, r, session)
-
-	ctx := r.Context()
-	if user, ok := ctx.Value(userKey).(*users.User); ok {
-		if user.ID > 0 {
-			v.LoggedIn = true
-			v.CurrentUser = user
-		}
-	}
 }
 
 // TemplateVars is an interface that describes the template variable struct.

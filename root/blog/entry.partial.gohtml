@@ -8,6 +8,13 @@
 {{ end }}
 
 <div class="blog-meta">
+    {{ if eq $p.Privacy "private" }}
+        <span class="blog-private">[private]</span>
+    {{ else if eq $p.Privacy "draft" }}
+        <span class="blog-draft">[draft]</span>
+    {{ else if eq $p.Privacy "unlisted" }}
+        <span class="blog-unlisted">[unlisted]</span>
+    {{ end }}
     <span title="{{ $p.Created.Format "Jan 2 2006 @ 15:04:05 MST" }}">
         {{ $p.Created.Format "January 2, 2006" }}
     </span>

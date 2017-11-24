@@ -28,11 +28,14 @@ type PostMeta struct {
 func (b *Blog) BlogRoutes(r *mux.Router) {
 	// Public routes
 	r.HandleFunc("/blog", b.BlogIndex)
+	r.HandleFunc("/tagged/{tag}", b.Tagged)
 
 	// Login-required routers.
 	loginRouter := mux.NewRouter()
 	loginRouter.HandleFunc("/blog/edit", b.EditBlog)
 	loginRouter.HandleFunc("/blog/delete", b.DeletePost)
+	loginRouter.HandleFunc("/blog/drafts", b.Drafts)
+	loginRouter.HandleFunc("/blog/private", b.PrivatePosts)
 	r.PathPrefix("/blog").Handler(
 		negroni.New(
 			negroni.HandlerFunc(b.LoginRequired),
@@ -52,6 +55,33 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 
 // BlogIndex renders the main index page of the blog.
 func (b *Blog) BlogIndex(w http.ResponseWriter, r *http.Request) {
+	b.PartialIndex(w, r, "", "")
+}
+
+// Tagged lets you browse blog posts by category.
+func (b *Blog) Tagged(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	tag, ok := params["tag"]
+	if !ok {
+		b.BadRequest(w, r, "Missing category in URL")
+	}
+
+	b.PartialIndex(w, r, tag, "")
+}
+
+// Drafts renders an index view of only draft posts. Login required.
+func (b *Blog) Drafts(w http.ResponseWriter, r *http.Request) {
+	b.PartialIndex(w, r, "", DRAFT)
+}
+
+// PrivatePosts renders an index view of only private posts. Login required.
+func (b *Blog) PrivatePosts(w http.ResponseWriter, r *http.Request) {
+	b.PartialIndex(w, r, "", PRIVATE)
+}
+
+// PartialIndex handles common logic for blog index views.
+func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
+	tag, privacy string) {
 	v := NewVars(map[interface{}]interface{}{})
 
 	// Get the blog index.
@@ -60,7 +90,50 @@ func (b *Blog) BlogIndex(w http.ResponseWriter, r *http.Request) {
 	// The set of blog posts to show.
 	var pool []posts.Post
 	for _, post := range idx.Posts {
+		// Limiting by a specific privacy setting? (drafts or private only)
+		if privacy != "" {
+			switch privacy {
+			case DRAFT:
+				if post.Privacy != DRAFT {
+					continue
+				}
+			case PRIVATE:
+				if post.Privacy != PRIVATE && post.Privacy != UNLISTED {
+					continue
+				}
+			}
+		} else {
+			// Exclude certain posts in generic index views.
+			if (post.Privacy == PRIVATE || post.Privacy == UNLISTED) && !b.LoggedIn(r) {
+				continue
+			} else if post.Privacy == DRAFT {
+				continue
+			}
+		}
+
+		// Limit by tag?
+		if tag != "" {
+			var tagMatch bool
+			if tag != "" {
+				for _, check := range post.Tags {
+					if check == tag {
+						tagMatch = true
+						break
+					}
+				}
+			}
+
+			if !tagMatch {
+				continue
+			}
+		}
+
 		pool = append(pool, post)
+	}
+
+	if len(pool) == 0 {
+		b.NotFound(w, r, "No blog posts were found.")
+		return
 	}
 
 	sort.Sort(sort.Reverse(posts.ByUpdated(pool)))
@@ -106,7 +179,7 @@ func (b *Blog) BlogIndex(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Render the post.
-		if post.ContentType == "markdown" {
+		if post.ContentType == string(MARKDOWN) {
 			rendered = template.HTML(b.RenderTrustedMarkdown(post.Body))
 		} else {
 			rendered = template.HTML(post.Body)
@@ -136,6 +209,14 @@ func (b *Blog) viewPost(w http.ResponseWriter, r *http.Request, fragment string)
 	post, err := posts.LoadFragment(fragment)
 	if err != nil {
 		return err
+	}
+
+	// Handle post privacy.
+	if post.Privacy == PRIVATE || post.Privacy == DRAFT {
+		if !b.LoggedIn(r) {
+			b.NotFound(w, r)
+			return nil
+		}
 	}
 
 	v := NewVars(map[interface{}]interface{}{
@@ -170,7 +251,7 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool) template.HTML {
 
 	// Render the post to HTML.
 	var rendered template.HTML
-	if p.ContentType == "markdown" {
+	if p.ContentType == string(MARKDOWN) {
 		rendered = template.HTML(b.RenderTrustedMarkdown(p.Body))
 	} else {
 		rendered = template.HTML(p.Body)
@@ -234,7 +315,7 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 		// Previewing, or submitting?
 		switch r.FormValue("submit") {
 		case "preview":
-			if post.ContentType == "markdown" || post.ContentType == "markdown+html" {
+			if post.ContentType == string(MARKDOWN) {
 				v.Data["preview"] = template.HTML(b.RenderMarkdown(post.Body))
 			} else {
 				v.Data["preview"] = template.HTML(post.Body)

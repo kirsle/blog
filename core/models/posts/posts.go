@@ -82,7 +82,7 @@ func (p *Post) Validate() error {
 		p.ContentType != "html" {
 		return errors.New("invalid setting for ContentType")
 	}
-	if p.Privacy != "public" && p.Privacy != "draft" && p.Privacy != "private" {
+	if p.Privacy != "public" && p.Privacy != "draft" && p.Privacy != "private" && p.Privacy != "unlisted" {
 		return errors.New("invalid setting for Privacy")
 	}
 	return nil

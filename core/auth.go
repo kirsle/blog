@@ -22,9 +22,16 @@ func (b *Blog) Login(w http.ResponseWriter, r *http.Request, u *users.User) erro
 
 // LoginHandler shows and handles the login page.
 func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	vars := &Vars{
-		Form: forms.Setup{},
+	vars := NewVars()
+	vars.Form = forms.Setup{}
+
+	var nextURL string
+	if r.Method == http.MethodPost {
+		nextURL = r.FormValue("next")
+	} else {
+		nextURL = r.URL.Query().Get("next")
 	}
+	vars.Data["NextURL"] = nextURL
 
 	if r.Method == http.MethodPost {
 		form := &forms.Login{
@@ -46,10 +53,9 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 				b.Login(w, r, user)
 
 				// A next URL given? TODO: actually get to work
-				next := r.FormValue("next")
-				log.Info("Redirect after login to: %s", next)
-				if len(next) > 0 && next[0] == '/' {
-					b.Redirect(w, next)
+				log.Info("Redirect after login to: %s", nextURL)
+				if len(nextURL) > 0 && nextURL[0] == '/' {
+					b.Redirect(w, nextURL)
 				} else {
 					b.Redirect(w, "/")
 				}

@@ -76,7 +76,18 @@ func (b *Blog) CurrentUser(r *http.Request) (*users.User, error) {
 		return u, err
 	}
 
-	return &users.User{}, errors.New("not authenticated")
+	return &users.User{
+		Admin: false,
+	}, errors.New("not authenticated")
+}
+
+// LoggedIn returns whether the current user is logged in to an account.
+func (b *Blog) LoggedIn(r *http.Request) bool {
+	session := b.Session(r)
+	if loggedIn, ok := session.Values["logged-in"].(bool); ok && loggedIn {
+		return true
+	}
+	return false
 }
 
 // AuthMiddleware loads the user's authentication state.
