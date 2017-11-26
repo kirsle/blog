@@ -91,7 +91,7 @@ func (b *Blog) PrivatePosts(w http.ResponseWriter, r *http.Request) {
 // PartialIndex handles common logic for blog index views.
 func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
 	tag, privacy string) {
-	v := NewVars(map[interface{}]interface{}{})
+	v := NewVars()
 
 	// Get the blog index.
 	idx, _ := posts.GetIndex()
@@ -317,13 +317,13 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool) template.HTML {
 	filepath, err := b.ResolvePath("blog/entry.partial")
 	if err != nil {
 		log.Error(err.Error())
-		return "[error: missing blog/entry.partial]"
+		return template.HTML("[error: missing blog/entry.partial]")
 	}
 	t := template.New("entry.partial.gohtml")
 	t, err = t.ParseFiles(filepath.Absolute)
 	if err != nil {
 		log.Error("Failed to parse entry.partial: %s", err.Error())
-		return "[error parsing template in blog/entry.partial]"
+		return template.HTML("[error parsing template in blog/entry.partial]")
 	}
 
 	meta := PostMeta{
@@ -337,7 +337,7 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool) template.HTML {
 	err = t.Execute(&output, meta)
 	if err != nil {
 		log.Error(err.Error())
-		return "[error executing template in blog/entry.partial]"
+		return template.HTML("[error executing template in blog/entry.partial]")
 	}
 
 	return template.HTML(output.String())
@@ -372,7 +372,7 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 		switch r.FormValue("submit") {
 		case "preview":
 			if post.ContentType == string(MARKDOWN) {
-				v.Data["preview"] = template.HTML(b.RenderMarkdown(post.Body))
+				v.Data["preview"] = template.HTML(b.RenderTrustedMarkdown(post.Body))
 			} else {
 				v.Data["preview"] = template.HTML(post.Body)
 			}

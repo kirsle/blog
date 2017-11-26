@@ -73,6 +73,7 @@ func (b *Blog) CurrentUser(r *http.Request) (*users.User, error) {
 	if loggedIn, ok := session.Values["logged-in"].(bool); ok && loggedIn {
 		id := session.Values["user-id"].(int)
 		u, err := users.LoadReadonly(id)
+		u.IsAuthenticated = true
 		return u, err
 	}
 

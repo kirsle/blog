@@ -23,6 +23,5 @@ func (b *Blog) RenderMarkdown(input string) string {
 // Markdown pages, not for user-submitted comments or things.
 func (b *Blog) RenderTrustedMarkdown(input string) string {
 	html := github_flavored_markdown.Markdown([]byte(input))
-	log.Info("%s", html)
 	return string(html)
 }

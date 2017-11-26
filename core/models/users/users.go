@@ -26,6 +26,8 @@ type User struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 
+	IsAuthenticated bool `json:"-"`
+
 	// Whether the user was loaded in read-only mode (no password), so they
 	// can't be saved without a password.
 	readonly bool

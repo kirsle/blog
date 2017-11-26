@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/core/models/comments"
 	"github.com/kirsle/blog/core/models/posts"
 	"github.com/kirsle/blog/core/models/settings"
 	"github.com/kirsle/blog/core/models/users"
@@ -25,9 +26,6 @@ type Blog struct {
 
 	DB *jsondb.DB
 
-	// Helper singletone
-	Posts *PostHelper
-
 	// Web app objects.
 	n     *negroni.Negroni // Negroni middleware manager
 	r     *mux.Router      // Router
@@ -41,7 +39,6 @@ func New(documentRoot, userRoot string) *Blog {
 		UserRoot:     userRoot,
 		DB:           jsondb.New(filepath.Join(userRoot, ".private")),
 	}
-	blog.Posts = InitPostHelper(blog)
 
 	// Load the site config, or start with defaults if not found.
 	settings.DB = blog.DB
@@ -57,6 +54,7 @@ func New(documentRoot, userRoot string) *Blog {
 	// Initialize the rest of the models.
 	posts.DB = blog.DB
 	users.DB = blog.DB
+	comments.DB = blog.DB
 
 	// Initialize the router.
 	r := mux.NewRouter()
@@ -65,6 +63,7 @@ func New(documentRoot, userRoot string) *Blog {
 	r.HandleFunc("/logout", blog.LogoutHandler)
 	blog.AdminRoutes(r)
 	blog.BlogRoutes(r)
+	blog.CommentRoutes(r)
 
 	// GitHub Flavored Markdown CSS.
 	r.Handle("/css/gfm.css", http.StripPrefix("/css", http.FileServer(gfmstyle.Assets)))

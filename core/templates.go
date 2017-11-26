@@ -98,16 +98,27 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 		return err
 	}
 
+	// The comment entry partial.
+	commentEntry, err := b.ResolvePath("comments/entry.partial")
+	if err != nil {
+		log.Error("RenderTemplate(%s): comments/entry.partial not found")
+		return err
+	}
+
 	// Useful template functions.
-	log.Error("HERE!!!")
 	t := template.New(filepath.Absolute).Funcs(template.FuncMap{
 		"StringsJoin": strings.Join,
 		"RenderPost":  b.RenderPost,
+		"RenderComments": func(subject string, ids ...string) template.HTML {
+			session := b.Session(r)
+			csrf := b.GenerateCSRFToken(w, r, session)
+			return b.RenderComments(session, csrf, r.URL.Path, subject, ids...)
+		},
 	})
 
 	// Parse the template files. The layout comes first because it's the wrapper
 	// and allows the filepath template to set the page title.
-	t, err = t.ParseFiles(layout.Absolute, filepath.Absolute)
+	t, err = t.ParseFiles(layout.Absolute, commentEntry.Absolute, filepath.Absolute)
 	if err != nil {
 		log.Error(err.Error())
 		return err

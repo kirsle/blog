@@ -17,7 +17,8 @@
 {{ if $p.EnableComments }}
     <h2 class="mt-4">Comments</h2>
 
-    TBD.
+    {{ $idStr := printf "%d" $p.ID}}
+    {{ RenderComments $p.Title "post" $idStr }}
 {{ else }}
     <hr>
     <em>Comments are disabled on this post.</em>

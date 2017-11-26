@@ -23,6 +23,13 @@ a.blog-title {
     color: #909;
 }
 
+/* Comment metadata line */
+.comment-meta {
+    font-style: italic;
+    font-size: smaller;
+    margin-bottom: 1rem;
+}
+
 /* Code blocks treated as <pre> tags */
 .markdown code {
     display: block;
