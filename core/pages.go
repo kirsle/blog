@@ -85,7 +85,7 @@ func (b *Blog) ResolvePath(path string) (Filepath, error) {
 	}
 
 	debug("Resolving filepath for URI: %s", path)
-	for _, root := range []string{b.DocumentRoot, b.UserRoot} {
+	for _, root := range []string{b.UserRoot, b.DocumentRoot} {
 		if len(root) == 0 {
 			continue
 		}

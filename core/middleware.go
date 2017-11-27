@@ -44,8 +44,9 @@ func (b *Blog) Session(r *http.Request) *sessions.Session {
 func (b *Blog) CSRFMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	if r.Method == "POST" {
 		session := b.Session(r)
-		token, ok := session.Values["csrf"].(string)
-		if !ok || token != r.FormValue("_csrf") {
+		token := b.GenerateCSRFToken(w, r, session)
+		if token != r.FormValue("_csrf") {
+			log.Error("CSRF Mismatch: expected %s, got %s", r.FormValue("_csrf"), token)
 			b.Forbidden(w, r, "Failed to validate CSRF token. Please try your request again.")
 			return
 		}

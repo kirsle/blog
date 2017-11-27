@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/kirsle/blog/core/forms"
 	"github.com/kirsle/blog/core/models/settings"
@@ -108,6 +109,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	// Useful template functions.
 	t := template.New(filepath.Absolute).Funcs(template.FuncMap{
 		"StringsJoin": strings.Join,
+		"Now":         time.Now,
 		"RenderPost":  b.RenderPost,
 		"RenderComments": func(subject string, ids ...string) template.HTML {
 			session := b.Session(r)

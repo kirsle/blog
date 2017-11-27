@@ -2,162 +2,159 @@
 {{ define "content" }}
 <form action="/admin/settings" method="POST">
 <input type="hidden" name="_csrf" value="{{ .CSRF }}">
-<div class="card">
-    {{ with .Data.s }}
-    <div class="card-body">
-        <h3>The Basics</h3>
 
-        <div class="form-group">
-            <label for="title">Title</label>
-            <input type="text"
-                class="form-control"
-                name="title"
-                value="{{ .Site.Title }}"
-                placeholder="Website Title">
-        </div>
+{{ with .Data.s }}
+    <h3>The Basics</h3>
 
-        <div class="form-group">
-            <label for="admin-email">Admin Email</label>
-            <small class="text-muted">For getting notifications about comments, etc.</small>
-            <input type="text"
-                class="form-control"
-                name="admin-email"
-                value="{{ .Site.AdminEmail }}"
-                placeholder="name@domain.com">
-        </div>
-
-        <div class="form-group">
-            <label for="admin-email">URL Root</label>
-            <small class="text-muted d-block">
-                The base absolute URL to your website. This is used to generate
-                emails such as comment notifications. If not provided, these
-                emails will not be sent.
-            </small>
-            <input type="text"
-                class="form-control"
-                name="url"
-                value="{{ .Site.URL }}"
-                placeholder="https://www.example.com/">
-        </div>
-
-        <h3>Redis Cache</h3>
-
-        <p>
-            Using a <a href="https://redis.io/" target="_blank">Redis</a> cache can
-            boost the performance of the JSON database by caching documents in
-            memory instead of always reading from disk.
-        </p>
-
-        <div class="form-check">
-            <label class="form-check-label">
-                <input type="checkbox"
-                    class="form-check-input"
-                    name="redis-enabled"
-                    value="true"
-                    {{ if .Redis.Enabled }}checked{{ end }}>
-                    Enable Redis
-            </label>
-        </div>
-        <div class="form-group">
-            <label for="redis-host">Redis Host</label>
-            <input type="text"
-                class="form-control"
-                name="redis-host"
-                value="{{ .Redis.Host }}"
-                placeholder="localhost">
-        </div>
-        <div class="form-group">
-            <label for="redis-port">Port</label>
-            <input type="text"
-                class="form-control"
-                name="redis-port"
-                value="{{ .Redis.Port }}"
-                placeholder="6379">
-        </div>
-        <div class="form-group">
-            <label for="redis-db">DB Number</label>
-            <small class="text-muted">0-15</small>
-            <input type="text"
-                class="form-control"
-                name="redis-db"
-                value="{{ .Redis.DB }}"
-                placeholder="0">
-        </div>
-        <div class="form-group">
-            <label for="redis-prefix">Key Prefix</label>
-            <small class="text-muted">(optional)</small>
-            <input type="text"
-                class="form-control"
-                name="redis-prefix"
-                value="{{ .Redis.Prefix }}"
-                placeholder="blog:">
-        </div>
-
-        <h3>Email Settings</h3>
-
-        <div class="form-check">
-            <label class="form-check-label">
-                <input type="checkbox"
-                    class="form-check-input"
-                    name="mail-enabled"
-                    value="true"
-                    {{ if .Mail.Enabled }}checked{{ end }}>
-                    Enable email to be sent by this site
-            </label>
-        </div>
-        <div class="form-group">
-            <label for="mail-sender">Sender Address</label>
-            <input type="email"
-                name="mail-sender"
-                id="mail-sender"
-                class="form-control"
-                value="{{ .Mail.Sender }}"
-                placeholder="no-reply@example.com">
-        </div>
-        <div class="form-group">
-            <label for="mail-host">SMTP Host</label>
-            <input type="text"
-                class="form-control"
-                name="mail-host"
-                id="mail-host"
-                value="{{ .Mail.Host }}"
-                placeholder="localhost">
-        </div>
-        <div class="form-group">
-            <label for="mail-port">SMTP Port</label>
-            <input type="text"
-                class="form-control"
-                name="mail-port"
-                id="mail-port"
-                value="{{ .Mail.Port }}"
-                placeholder="25">
-        </div>
-        <div class="form-group">
-            <label for="mail-username">SMTP Username</label>
-            <small class="text-muted">(optional)</small>
-            <input type="text"
-                class="form-control"
-                name="mail-username"
-                value="{{ .Mail.Username }}"
-                placeholder="">
-        </div>
-        <div class="form-group">
-            <label for="mail-password">SMTP Password</label>
-            <small class="text-muted">(optional)</small>
-            <input type="text"
-                class="form-control"
-                name="mail-password"
-                value="{{ .Mail.Password }}"
-                placeholder="">
-        </div>
-
-        <div class="form-group">
-            <button type="submit" class="btn btn-primary">Save Settings</button>
-            <a href="/admin" class="btn btn-secondary">Cancel</a>
-        </div>
-
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text"
+            class="form-control"
+            name="title"
+            value="{{ .Site.Title }}"
+            placeholder="Website Title">
     </div>
-    {{ end }}
-</div>
+
+    <div class="form-group">
+        <label for="admin-email">Admin Email</label>
+        <small class="text-muted">For getting notifications about comments, etc.</small>
+        <input type="text"
+            class="form-control"
+            name="admin-email"
+            value="{{ .Site.AdminEmail }}"
+            placeholder="name@domain.com">
+    </div>
+
+    <div class="form-group">
+        <label for="admin-email">URL Root</label>
+        <small class="text-muted d-block">
+            The base absolute URL to your website. This is used to generate
+            emails such as comment notifications. If not provided, these
+            emails will not be sent.
+        </small>
+        <input type="text"
+            class="form-control"
+            name="url"
+            value="{{ .Site.URL }}"
+            placeholder="https://www.example.com/">
+    </div>
+
+    <h3>Redis Cache</h3>
+
+    <p>
+        Using a <a href="https://redis.io/" target="_blank">Redis</a> cache can
+        boost the performance of the JSON database by caching documents in
+        memory instead of always reading from disk.
+    </p>
+
+    <div class="form-check">
+        <label class="form-check-label">
+            <input type="checkbox"
+                class="form-check-input"
+                name="redis-enabled"
+                value="true"
+                {{ if .Redis.Enabled }}checked{{ end }}>
+                Enable Redis
+        </label>
+    </div>
+    <div class="form-group">
+        <label for="redis-host">Redis Host</label>
+        <input type="text"
+            class="form-control"
+            name="redis-host"
+            value="{{ .Redis.Host }}"
+            placeholder="localhost">
+    </div>
+    <div class="form-group">
+        <label for="redis-port">Port</label>
+        <input type="text"
+            class="form-control"
+            name="redis-port"
+            value="{{ .Redis.Port }}"
+            placeholder="6379">
+    </div>
+    <div class="form-group">
+        <label for="redis-db">DB Number</label>
+        <small class="text-muted">0-15</small>
+        <input type="text"
+            class="form-control"
+            name="redis-db"
+            value="{{ .Redis.DB }}"
+            placeholder="0">
+    </div>
+    <div class="form-group">
+        <label for="redis-prefix">Key Prefix</label>
+        <small class="text-muted">(optional)</small>
+        <input type="text"
+            class="form-control"
+            name="redis-prefix"
+            value="{{ .Redis.Prefix }}"
+            placeholder="blog:">
+    </div>
+
+    <h3>Email Settings</h3>
+
+    <div class="form-check">
+        <label class="form-check-label">
+            <input type="checkbox"
+                class="form-check-input"
+                name="mail-enabled"
+                value="true"
+                {{ if .Mail.Enabled }}checked{{ end }}>
+                Enable email to be sent by this site
+        </label>
+    </div>
+    <div class="form-group">
+        <label for="mail-sender">Sender Address</label>
+        <input type="email"
+            name="mail-sender"
+            id="mail-sender"
+            class="form-control"
+            value="{{ .Mail.Sender }}"
+            placeholder="no-reply@example.com">
+    </div>
+    <div class="form-group">
+        <label for="mail-host">SMTP Host</label>
+        <input type="text"
+            class="form-control"
+            name="mail-host"
+            id="mail-host"
+            value="{{ .Mail.Host }}"
+            placeholder="localhost">
+    </div>
+    <div class="form-group">
+        <label for="mail-port">SMTP Port</label>
+        <input type="text"
+            class="form-control"
+            name="mail-port"
+            id="mail-port"
+            value="{{ .Mail.Port }}"
+            placeholder="25">
+    </div>
+    <div class="form-group">
+        <label for="mail-username">SMTP Username</label>
+        <small class="text-muted">(optional)</small>
+        <input type="text"
+            class="form-control"
+            name="mail-username"
+            value="{{ .Mail.Username }}"
+            placeholder="">
+    </div>
+    <div class="form-group">
+        <label for="mail-password">SMTP Password</label>
+        <small class="text-muted">(optional)</small>
+        <input type="text"
+            class="form-control"
+            name="mail-password"
+            value="{{ .Mail.Password }}"
+            placeholder="">
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <a href="/admin" class="btn btn-secondary">Cancel</a>
+    </div>
+{{ end }}
+
 </form>
 {{ end }}

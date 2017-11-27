@@ -4,6 +4,7 @@ package jsondb
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -26,6 +27,7 @@ var (
 
 // New initializes the JSON database.
 func New(root string) *DB {
+	log.Info("Initialized JsonDB at root: %s", root)
 	return &DB{
 		Root: root,
 	}
@@ -60,12 +62,15 @@ func (db *DB) Commit(document string, v interface{}) error {
 	path := db.toPath(document)
 
 	// Ensure the directory tree is ready.
-	db.makePath(path)
-
-	// Write the document.
-	err := db.writeJSON(path, v)
+	err := db.makePath(path)
 	if err != nil {
 		return err
+	}
+
+	// Write the document.
+	err = db.writeJSON(path, v)
+	if err != nil {
+		return fmt.Errorf("failed to write JSON to path %s: %s", path, err.Error())
 	}
 
 	return nil
@@ -107,7 +112,7 @@ func (db *DB) ListAll(path string) ([]string, error) {
 func (db *DB) makePath(path string) error {
 	parts := strings.Split(path, string(filepath.Separator))
 	parts = parts[:len(parts)-1] // pop off the filename
-	directory := filepath.Join(parts...)
+	directory := "/" + filepath.Join(parts...)
 
 	if _, err := os.Stat(directory); err != nil {
 		log.Debug("[JsonDB] Create directory: %s", directory)
