@@ -54,9 +54,10 @@ type Comment struct {
 	Trap2     string        `json:"-"`
 
 	// Even privater fields.
-	Username string `json:"-"`
-	Editable bool   `json:"-"`
-	Editing  bool   `json:"-"`
+	IsAuthenticated bool   `json:"-"`
+	Username        string `json:"-"`
+	Editable        bool   `json:"-"`
+	Editing         bool   `json:"-"`
 }
 
 // New initializes a new comment thread.
@@ -104,8 +105,6 @@ func (t *Thread) Post(c *Comment) error {
 
 	t.Comments = append(t.Comments, c)
 	DB.Commit(fmt.Sprintf("comments/threads/%s", t.ID), t)
-
-	// TODO: handle subscriptions.
 	return nil
 }
 
@@ -143,7 +142,6 @@ func (t *Thread) Delete(id string) error {
 // FindByDeleteToken finds a comment by its deletion token.
 func (t *Thread) FindByDeleteToken(token string) (*Comment, error) {
 	for _, c := range t.Comments {
-		fmt.Printf("%s <> %s\n", c.DeleteToken, token)
 		if c.DeleteToken == token {
 			return c, nil
 		}

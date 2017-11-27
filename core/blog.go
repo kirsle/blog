@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"sort"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/kirsle/blog/core/models/comments"
 	"github.com/kirsle/blog/core/models/posts"
 	"github.com/kirsle/blog/core/models/users"
 	"github.com/urfave/negroni"
@@ -18,11 +20,12 @@ import (
 
 // PostMeta associates a Post with injected metadata.
 type PostMeta struct {
-	Post      *posts.Post
-	Rendered  template.HTML
-	Author    *users.User
-	IndexView bool
-	Snipped   bool
+	Post        *posts.Post
+	Rendered    template.HTML
+	Author      *users.User
+	NumComments int
+	IndexView   bool
+	Snipped     bool
 }
 
 // Archive holds data for a piece of the blog archive.
@@ -201,10 +204,17 @@ func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
 			author = users.DeletedUser()
 		}
 
+		// Count the comments on this post.
+		var numComments int
+		if thread, err := comments.Load(fmt.Sprintf("post-%d", post.ID)); err == nil {
+			numComments = len(thread.Comments)
+		}
+
 		view = append(view, PostMeta{
-			Post:     post,
-			Rendered: rendered,
-			Author:   author,
+			Post:        post,
+			Rendered:    rendered,
+			Author:      author,
+			NumComments: numComments,
 		})
 	}
 
@@ -286,7 +296,7 @@ func (b *Blog) viewPost(w http.ResponseWriter, r *http.Request, fragment string)
 // RenderPost renders a blog post as a partial template and returns the HTML.
 // If indexView is true, the blog headers will be hyperlinked to the dedicated
 // entry view page.
-func (b *Blog) RenderPost(p *posts.Post, indexView bool) template.HTML {
+func (b *Blog) RenderPost(p *posts.Post, indexView bool, numComments int) template.HTML {
 	// Look up the author's information.
 	author, err := users.LoadReadonly(p.AuthorID)
 	if err != nil {
@@ -327,11 +337,12 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool) template.HTML {
 	}
 
 	meta := PostMeta{
-		Post:      p,
-		Rendered:  rendered,
-		Author:    author,
-		IndexView: indexView,
-		Snipped:   snipped,
+		Post:        p,
+		Rendered:    rendered,
+		Author:      author,
+		IndexView:   indexView,
+		Snipped:     snipped,
+		NumComments: numComments,
 	}
 	output := bytes.Buffer{}
 	err = t.Execute(&output, meta)

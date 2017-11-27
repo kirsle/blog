@@ -26,6 +26,20 @@
                 placeholder="name@domain.com">
         </div>
 
+        <div class="form-group">
+            <label for="admin-email">URL Root</label>
+            <small class="text-muted d-block">
+                The base absolute URL to your website. This is used to generate
+                emails such as comment notifications. If not provided, these
+                emails will not be sent.
+            </small>
+            <input type="text"
+                class="form-control"
+                name="url"
+                value="{{ .Site.URL }}"
+                placeholder="https://www.example.com/">
+        </div>
+
         <h3>Redis Cache</h3>
 
         <p>
@@ -77,6 +91,64 @@
                 name="redis-prefix"
                 value="{{ .Redis.Prefix }}"
                 placeholder="blog:">
+        </div>
+
+        <h3>Email Settings</h3>
+
+        <div class="form-check">
+            <label class="form-check-label">
+                <input type="checkbox"
+                    class="form-check-input"
+                    name="mail-enabled"
+                    value="true"
+                    {{ if .Mail.Enabled }}checked{{ end }}>
+                    Enable email to be sent by this site
+            </label>
+        </div>
+        <div class="form-group">
+            <label for="mail-sender">Sender Address</label>
+            <input type="email"
+                name="mail-sender"
+                id="mail-sender"
+                class="form-control"
+                value="{{ .Mail.Sender }}"
+                placeholder="no-reply@example.com">
+        </div>
+        <div class="form-group">
+            <label for="mail-host">SMTP Host</label>
+            <input type="text"
+                class="form-control"
+                name="mail-host"
+                id="mail-host"
+                value="{{ .Mail.Host }}"
+                placeholder="localhost">
+        </div>
+        <div class="form-group">
+            <label for="mail-port">SMTP Port</label>
+            <input type="text"
+                class="form-control"
+                name="mail-port"
+                id="mail-port"
+                value="{{ .Mail.Port }}"
+                placeholder="25">
+        </div>
+        <div class="form-group">
+            <label for="mail-username">SMTP Username</label>
+            <small class="text-muted">(optional)</small>
+            <input type="text"
+                class="form-control"
+                name="mail-username"
+                value="{{ .Mail.Username }}"
+                placeholder="">
+        </div>
+        <div class="form-group">
+            <label for="mail-password">SMTP Password</label>
+            <small class="text-muted">(optional)</small>
+            <input type="text"
+                class="form-control"
+                name="mail-password"
+                value="{{ .Mail.Password }}"
+                placeholder="">
         </div>
 
         <div class="form-group">

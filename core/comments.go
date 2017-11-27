@@ -2,9 +2,10 @@ package core
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"html/template"
 	"net/http"
+	"net/mail"
 	"strings"
 
 	"github.com/google/uuid"
@@ -17,24 +18,19 @@ import (
 // CommentRoutes attaches the comment routes to the app.
 func (b *Blog) CommentRoutes(r *mux.Router) {
 	r.HandleFunc("/comments", b.CommentHandler)
-	r.HandleFunc("/comments/edit", b.EditCommentHandler)
-	r.HandleFunc("/comments/delete", b.DeleteCommentHandler)
+	r.HandleFunc("/comments/subscription", b.SubscriptionHandler)
+	r.HandleFunc("/comments/quick-delete", b.QuickDeleteHandler)
 }
 
 // CommentMeta is the template variables for comment threads.
 type CommentMeta struct {
-	IsAuthenticated bool
-	ID              string
-	OriginURL       string // URL where original comment thread appeared
-	Subject         string // email subject
-	Thread          *comments.Thread
-	Authors         map[int]*users.User
-	CSRF            string
-
-	// Cached name and email of the user.
-	Name      string
-	Email     string
-	EditToken string
+	NewComment comments.Comment
+	ID         string
+	OriginURL  string // URL where original comment thread appeared
+	Subject    string // email subject
+	Thread     *comments.Thread
+	Authors    map[int]*users.User
+	CSRF       string
 }
 
 // RenderComments renders a comment form partial and returns the HTML.
@@ -73,12 +69,9 @@ func (b *Blog) RenderComments(session *sessions.Session, csrfToken, url, subject
 
 		// Look up the author username.
 		if c.UserID > 0 {
-			log.Warn("Has USERID %d", c.UserID)
 			if _, ok := userMap[c.UserID]; !ok {
-				log.Warn("not in map")
 				if user, err := users.Load(c.UserID); err == nil {
 					userMap[c.UserID] = user
-					log.Warn("is now!")
 				}
 			}
 
@@ -94,8 +87,6 @@ func (b *Blog) RenderComments(session *sessions.Session, csrfToken, url, subject
 		if isAdmin || (len(c.EditToken) > 0 && c.EditToken == editToken) {
 			c.Editable = true
 		}
-
-		fmt.Printf("%v\n", c)
 	}
 
 	// Get the template snippet.
@@ -120,22 +111,22 @@ func (b *Blog) RenderComments(session *sessions.Session, csrfToken, url, subject
 	}
 
 	v := CommentMeta{
-		ID:              thread.ID,
-		OriginURL:       url,
-		Subject:         subject,
-		CSRF:            csrfToken,
-		Thread:          &thread,
-		IsAuthenticated: isAuthenticated,
-		Name:            name,
-		Email:           email,
-		EditToken:       editToken,
+		ID:        thread.ID,
+		OriginURL: url,
+		Subject:   subject,
+		CSRF:      csrfToken,
+		Thread:    &thread,
+		NewComment: comments.Comment{
+			Name:            name,
+			Email:           email,
+			IsAuthenticated: isAuthenticated,
+		},
 	}
 
 	output := bytes.Buffer{}
 	err = t.Execute(&output, v)
 	if err != nil {
-		log.Error(err.Error())
-		return template.HTML("[error executing template in comments/comments.partial]")
+		return template.HTML(err.Error())
 	}
 
 	return template.HTML(output.String())
@@ -228,8 +219,24 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 				c.UserID = currentUser.ID
 			}
 
+			// Append their comment.
 			t.Post(c)
+			b.NotifyComment(c)
+
+			// Are they subscribing to future comments?
+			if c.Subscribe && len(c.Email) > 0 {
+				if _, err := mail.ParseAddress(c.Email); err == nil {
+					m := comments.LoadMailingList()
+					m.Subscribe(t.ID, c.Email)
+					b.FlashAndRedirect(w, r, c.OriginURL,
+						"Comment posted, and you've been subscribed to "+
+							"future comments on this page.",
+					)
+					return
+				}
+			}
 			b.FlashAndRedirect(w, r, c.OriginURL, "Comment posted!")
+			return
 		}
 	}
 
@@ -241,49 +248,60 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 	b.RenderTemplate(w, r, "comments/index.gohtml", v)
 }
 
-// EditCommentHandler for editing comments.
-func (b *Blog) EditCommentHandler(w http.ResponseWriter, r *http.Request) {
-	var (
-		threadID    = r.URL.Query().Get("t")
-		deleteToken = r.URL.Query().Get("d")
-		originURL   = r.URL.Query().Get("o")
-	)
-
-	// Our edit token.
-	editToken := b.GetEditToken(w, r)
-
-	// Search for the comment.
-	thread, err := comments.Load(threadID)
-	if err != nil {
-		b.FlashAndRedirect(w, r, "/", "That comment thread was not found.")
-		return
-	}
-	comment, err := thread.FindByDeleteToken(deleteToken)
-	if err != nil {
-		b.FlashAndRedirect(w, r, "/", "That comment was not found.")
-		return
-	}
-
-	// And can we edit it?
-	if comment.EditToken != editToken {
-		b.Forbidden(w, r, "Your edit token is not valid for that comment.")
-		return
-	}
-
-	comment.ThreadID = thread.ID
-	comment.OriginURL = originURL
-
+// SubscriptionHandler to opt out of subscriptions.
+func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	v := NewVars()
-	v.Data["Thread"] = thread
-	v.Data["Comment"] = comment
-	v.Data["Editing"] = true
 
-	b.RenderTemplate(w, r, "comments/index.gohtml", v)
+	// POST to unsubscribe from all threads.
+	if r.Method == http.MethodPost {
+		email := r.FormValue("email")
+		if email == "" {
+			v.Error = errors.New("email address is required to unsubscribe from comment threads")
+		} else if _, err := mail.ParseAddress(email); err != nil {
+			v.Error = errors.New("invalid email address")
+		}
+
+		m := comments.LoadMailingList()
+		m.UnsubscribeAll(email)
+		b.FlashAndRedirect(w, r, "/comments/subscription",
+			"You have been unsubscribed from all mailing lists.",
+		)
+		return
+	}
+
+	// GET to unsubscribe from a single thread.
+	thread := r.URL.Query().Get("t")
+	email := r.URL.Query().Get("e")
+	if thread != "" && email != "" {
+		m := comments.LoadMailingList()
+		m.Unsubscribe(thread, email)
+		b.FlashAndRedirect(w, r, "/comments/subscription", "You have been unsubscribed successfully.")
+		return
+	}
+
+	b.RenderTemplate(w, r, "comments/subscription.gohtml", v)
 }
 
-// DeleteCommentHandler for editing comments.
-func (b *Blog) DeleteCommentHandler(w http.ResponseWriter, r *http.Request) {
+// QuickDeleteHandler allows the admin to quickly delete spam without logging in.
+func (b *Blog) QuickDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	thread := r.URL.Query().Get("t")
+	token := r.URL.Query().Get("d")
+	if thread == "" || token == "" {
+		b.BadRequest(w, r)
+		return
+	}
 
+	t, err := comments.Load(thread)
+	if err != nil {
+		b.BadRequest(w, r, "Comment thread does not exist.")
+		return
+	}
+
+	if c, err := t.FindByDeleteToken(token); err == nil {
+		t.Delete(c.ID)
+	}
+
+	b.FlashAndRedirect(w, r, "/", "Comment deleted!")
 }
 
 // GetEditToken gets or generates an edit token from the user's session, which

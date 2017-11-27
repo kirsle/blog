@@ -2,7 +2,7 @@
 {{ define "content" }}
 
 {{ $p := .Data.Post }}
-{{ RenderPost $p false }}
+{{ RenderPost $p false 0 }}
 
 {{ if and .LoggedIn .CurrentUser.Admin }}
     <small>
@@ -15,7 +15,7 @@
 {{ end }}
 
 {{ if $p.EnableComments }}
-    <h2 class="mt-4">Comments</h2>
+    <h2 id="comments" class="mt-4">Comments</h2>
 
     {{ $idStr := printf "%d" $p.ID}}
     {{ RenderComments $p.Title "post" $idStr }}

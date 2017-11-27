@@ -1,0 +1,50 @@
+{{ define "title" }}Manage Comment Subscriptions{{ end }}
+{{ define "content" }}
+
+<h1>Comment Subscriptions</h1>
+
+<p>
+    When leaving comments on this website, you may <em>optionally</em>
+    subscribe to get email notifications when new comments are added to
+    the same thread. This way you can get notified when your question
+    has been answered, for example.
+</p>
+
+<h2>Privacy Policy</h2>
+
+<p>
+    This web blog is open source software, so the following is true as far as
+    the web blog software itself is concerned. Please check with the site
+    administrator for their personal privacy policy.
+</p>
+
+<p>
+    Your email address is used for the following purposes by this web blog:
+</p>
+
+<ul>
+    <li>Showing your <a href="https://www.gravatar.com/" target="_blank">Gravatar</a> next to your comment.</li>
+    <li>With your permission: sending you notifications about future comments on the page.</li>
+</ul>
+
+<h2>Unsubscribe</h2>
+
+<p>
+    To unsubscribe from individual comment threads, use the "Unsubscribe" links
+    in the emails. Or, to unsubcribe from <strong>all</strong> comment threads,
+    enter your email address below.
+</p>
+
+<form class="form-inline" action="/comments/subscription" method="POST">
+    <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+    <label class="sr-only" for="email">Email address</label>
+    <input type="email"
+        name="email"
+        id="email"
+        class="form-control mr-2"
+        placeholder="name@domain.com">
+
+    <button type="submit" class="btn btn-primary">Unsubscribe</button>
+</form>
+
+{{ end }}

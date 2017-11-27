@@ -9,11 +9,18 @@ import (
 type Settings struct {
 	Title        string
 	AdminEmail   string
+	URL          string
 	RedisEnabled bool
 	RedisHost    string
 	RedisPort    int
 	RedisDB      int
 	RedisPrefix  string
+	MailEnabled  bool
+	MailSender   string
+	MailHost     string
+	MailPort     int
+	MailUsername string
+	MailPassword string
 }
 
 // Validate the form.

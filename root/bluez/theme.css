@@ -36,6 +36,10 @@ label.form-check-label {
 button {
     cursor: pointer;
 }
+.text-muted a {
+    color: #868e96 !important;
+    text-decoration: underline;
+}
 
 /*
  * Top nav

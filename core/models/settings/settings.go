@@ -19,6 +19,7 @@ type Settings struct {
 	Site struct {
 		Title      string `json:"title"`
 		AdminEmail string `json:"adminEmail"`
+		URL        string `json:"url"`
 	} `json:"site"`
 
 	// Security-related settings.
@@ -37,7 +38,14 @@ type Settings struct {
 	} `json:"redis"`
 
 	// Mail settings
-	Mail struct{} `json:"mail,omitempty"`
+	Mail struct {
+		Enabled  bool   `json:"enabled"`
+		Sender   string `json:"sender"`
+		Host     string `json:"host"`
+		Port     int    `json:"port"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+	} `json:"mail,omitempty"`
 }
 
 // Defaults returns default settings. The app initially sets this on
@@ -52,6 +60,8 @@ func Defaults() *Settings {
 	s.Redis.Host = "localhost"
 	s.Redis.Port = 6379
 	s.Redis.DB = 0
+	s.Mail.Host = "localhost"
+	s.Mail.Port = 25
 	return s
 }
 

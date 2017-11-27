@@ -58,6 +58,7 @@ type Filepath struct {
 	// possible with a file extension injected.
 	// (i.e. "/about" -> "about.html")
 	URI      string
+	Basename string
 	Relative string // Relative path including document root (i.e. "root/about.html")
 	Absolute string // Absolute path on disk (i.e. "/opt/blog/root/about.html")
 }
@@ -92,6 +93,7 @@ func (b *Blog) ResolvePath(path string) (Filepath, error) {
 		// Resolve the file path.
 		relPath := filepath.Join(root, path)
 		absPath, err := filepath.Abs(relPath)
+		basename := filepath.Base(relPath)
 		if err != nil {
 			log.Error("%v", err)
 		}
@@ -101,7 +103,7 @@ func (b *Blog) ResolvePath(path string) (Filepath, error) {
 		// Found an exact hit?
 		if stat, err := os.Stat(absPath); !os.IsNotExist(err) && !stat.IsDir() {
 			debug("Exact filepath found: %s", absPath)
-			return Filepath{path, relPath, absPath}, nil
+			return Filepath{path, basename, relPath, absPath}, nil
 		}
 
 		// Try some supported suffixes.
@@ -117,7 +119,7 @@ func (b *Blog) ResolvePath(path string) (Filepath, error) {
 			test := absPath + suffix
 			if stat, err := os.Stat(test); !os.IsNotExist(err) && !stat.IsDir() {
 				debug("Filepath found via suffix %s: %s", suffix, test)
-				return Filepath{path + suffix, relPath + suffix, test}, nil
+				return Filepath{path + suffix, basename + suffix, relPath + suffix, test}, nil
 			}
 		}
 	}
