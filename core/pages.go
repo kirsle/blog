@@ -35,7 +35,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	filepath, err := b.ResolvePath(path)
 	if err != nil {
 		// See if it resolves as a blog entry.
-		err = b.viewPost(w, r, path)
+		err = b.viewPost(w, r, strings.TrimLeft(path, "/"))
 		if err != nil {
 			b.NotFound(w, r, "The page you were looking for was not found.")
 		}

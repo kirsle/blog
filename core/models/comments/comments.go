@@ -156,7 +156,6 @@ func (c *Comment) ParseForm(r *http.Request) {
 	// attribute is currently empty.
 	define := func(target *string, value string) {
 		if value != "" {
-			log.Info("SET DEFINE: %s", value)
 			*target = value
 		}
 	}

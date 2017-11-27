@@ -10,6 +10,7 @@ import (
 
 	"github.com/kirsle/blog/core/models/comments"
 	"github.com/kirsle/blog/core/models/settings"
+	"github.com/microcosm-cc/bluemonday"
 	gomail "gopkg.in/gomail.v2"
 )
 
@@ -51,11 +52,28 @@ func (b *Blog) SendEmail(email Email) {
 		log.Error("SendEmail: template execution error: %s", err.Error())
 	}
 
+	// Condense the body down to plain text, lazily. Who even has a plain text
+	// email client anymore?
+	rawLines := strings.Split(
+		bluemonday.StrictPolicy().Sanitize(html.String()),
+		"\n",
+	)
+	var lines []string
+	for _, line := range rawLines {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	plaintext := strings.Join(lines, "\n\n")
+
 	m := gomail.NewMessage()
-	m.SetHeader("From", s.Mail.Sender)
+	m.SetHeader("From", fmt.Sprintf("%s <%s>", s.Site.Title, s.Mail.Sender))
 	m.SetHeader("To", email.To)
 	m.SetHeader("Subject", email.Subject)
-	m.SetBody("text/html", html.String())
+	m.SetBody("text/plain", plaintext)
+	m.AddAlternative("text/html", html.String())
 
 	d := gomail.NewDialer(s.Mail.Host, s.Mail.Port, s.Mail.Username, s.Mail.Password)
 	if b.Debug {

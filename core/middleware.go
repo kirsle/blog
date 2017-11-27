@@ -21,8 +21,6 @@ const (
 // Request context.
 func (b *Blog) SessionLoader(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	session, _ := b.store.Get(r, "session")
-
-	log.Debug("REQUEST START: %s %s", r.Method, r.URL.Path)
 	ctx := context.WithValue(r.Context(), sessionKey, session)
 	next(w, r.WithContext(ctx))
 }
@@ -95,7 +93,6 @@ func (b *Blog) LoggedIn(r *http.Request) bool {
 func (b *Blog) AuthMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	u, err := b.CurrentUser(r)
 	if err != nil {
-		log.Error("Error loading user from session: %v", err)
 		next(w, r)
 		return
 	}
