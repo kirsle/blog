@@ -38,7 +38,7 @@ type Archive struct {
 // BlogRoutes attaches the blog routes to the app.
 func (b *Blog) BlogRoutes(r *mux.Router) {
 	// Public routes
-	r.HandleFunc("/blog", b.BlogIndex)
+	r.HandleFunc("/blog", b.IndexHandler)
 	r.HandleFunc("/archive", b.BlogArchive)
 	r.HandleFunc("/tagged/{tag}", b.Tagged)
 
@@ -65,9 +65,9 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 	))
 }
 
-// BlogIndex renders the main index page of the blog.
-func (b *Blog) BlogIndex(w http.ResponseWriter, r *http.Request) {
-	b.PartialIndex(w, r, "", "")
+// IndexHandler renders the main index page of the blog.
+func (b *Blog) IndexHandler(w http.ResponseWriter, r *http.Request) {
+	b.CommonIndexHandler(w, r, "", "")
 }
 
 // Tagged lets you browse blog posts by category.
@@ -78,24 +78,42 @@ func (b *Blog) Tagged(w http.ResponseWriter, r *http.Request) {
 		b.BadRequest(w, r, "Missing category in URL")
 	}
 
-	b.PartialIndex(w, r, tag, "")
+	b.CommonIndexHandler(w, r, tag, "")
 }
 
 // Drafts renders an index view of only draft posts. Login required.
 func (b *Blog) Drafts(w http.ResponseWriter, r *http.Request) {
-	b.PartialIndex(w, r, "", DRAFT)
+	b.CommonIndexHandler(w, r, "", DRAFT)
 }
 
 // PrivatePosts renders an index view of only private posts. Login required.
 func (b *Blog) PrivatePosts(w http.ResponseWriter, r *http.Request) {
-	b.PartialIndex(w, r, "", PRIVATE)
+	b.CommonIndexHandler(w, r, "", PRIVATE)
 }
 
-// PartialIndex handles common logic for blog index views.
-func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
-	tag, privacy string) {
-	v := NewVars()
+// CommonIndexHandler handles common logic for blog index views.
+func (b *Blog) CommonIndexHandler(w http.ResponseWriter, r *http.Request, tag, privacy string) {
+	// Page title.
+	var title string
+	if privacy == DRAFT {
+		title = "Draft Posts"
+	} else if privacy == PRIVATE {
+		title = "Private Posts"
+	} else if tag != "" {
+		title = "Tagged as: " + tag
+	} else {
+		title = "Blog"
+	}
 
+	b.RenderTemplate(w, r, "blog/index", NewVars(map[interface{}]interface{}{
+		"Title":   title,
+		"Tag":     tag,
+		"Privacy": privacy,
+	}))
+}
+
+// RenderIndex renders and returns the blog index partial.
+func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 	// Get the blog index.
 	idx, _ := posts.GetIndex()
 
@@ -144,8 +162,7 @@ func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
 	}
 
 	if len(pool) == 0 {
-		b.NotFound(w, r, "No blog posts were found.")
-		return
+		return template.HTML("No blog posts were found.")
 	}
 
 	sort.Sort(sort.Reverse(posts.ByUpdated(pool)))
@@ -160,16 +177,16 @@ func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
 	stop := offset + perPage
 
 	// Handle pagination.
-	v.Data["Page"] = page
+	var previousPage, nextPage int
 	if page > 1 {
-		v.Data["PreviousPage"] = page - 1
+		previousPage = page - 1
 	} else {
-		v.Data["PreviousPage"] = 0
+		previousPage = 0
 	}
 	if offset+perPage < len(pool) {
-		v.Data["NextPage"] = page + 1
+		nextPage = page + 1
 	} else {
-		v.Data["NextPage"] = 0
+		nextPage = 0
 	}
 
 	var view []PostMeta
@@ -218,8 +235,16 @@ func (b *Blog) PartialIndex(w http.ResponseWriter, r *http.Request,
 		})
 	}
 
-	v.Data["View"] = view
-	b.RenderTemplate(w, r, "blog/index", v)
+	// Render the blog index partial.
+	var output bytes.Buffer
+	v := map[string]interface{}{
+		"PreviousPage": previousPage,
+		"NextPage":     nextPage,
+		"View":         view,
+	}
+	b.RenderPartialTemplate(&output, "blog/index.partial", v, false, nil)
+
+	return template.HTML(output.String())
 }
 
 // BlogArchive summarizes all blog entries in an archive view.
@@ -271,6 +296,8 @@ func (b *Blog) BlogArchive(w http.ResponseWriter, r *http.Request) {
 
 // viewPost is the underlying implementation of the handler to view a blog
 // post, so that it can be called from non-http.HandlerFunc contexts.
+// Specifically, from the catch-all page handler to allow blog URL fragments
+// to map to their post.
 func (b *Blog) viewPost(w http.ResponseWriter, r *http.Request, fragment string) error {
 	post, err := posts.LoadFragment(fragment)
 	if err != nil {
@@ -323,19 +350,6 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool, numComments int) templa
 		rendered = template.HTML(p.Body)
 	}
 
-	// Get the template snippet.
-	filepath, err := b.ResolvePath("blog/entry.partial")
-	if err != nil {
-		log.Error(err.Error())
-		return template.HTML("[error: missing blog/entry.partial]")
-	}
-	t := template.New("entry.partial.gohtml")
-	t, err = t.ParseFiles(filepath.Absolute)
-	if err != nil {
-		log.Error("Failed to parse entry.partial: %s", err.Error())
-		return template.HTML("[error parsing template in blog/entry.partial]")
-	}
-
 	meta := PostMeta{
 		Post:        p,
 		Rendered:    rendered,
@@ -345,10 +359,9 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool, numComments int) templa
 		NumComments: numComments,
 	}
 	output := bytes.Buffer{}
-	err = t.Execute(&output, meta)
+	err = b.RenderPartialTemplate(&output, "blog/entry.partial", meta, false, nil)
 	if err != nil {
-		log.Error(err.Error())
-		return template.HTML("[error executing template in blog/entry.partial]")
+		return template.HTML(fmt.Sprintf("[template error in blog/entry.partial: %s]", err.Error()))
 	}
 
 	return template.HTML(output.String())

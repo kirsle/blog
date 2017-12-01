@@ -19,12 +19,6 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle the root URI with the blog index.
-	if path == "/" {
-		b.BlogIndex(w, r)
-		return
-	}
-
 	// Restrict special paths.
 	if strings.HasPrefix(strings.ToLower(path), "/.") {
 		b.Forbidden(w, r)

@@ -1,4 +1,11 @@
 {{ define "title" }}Welcome{{ end }}
 {{ define "content" }}
-<h1>Index</h1>
+<h1>Welcome to "Blog!"</h1>
+
+<p>
+    This is your index page. You can edit it and put whatever you want here.
+    By default, the blog index is also embedded on the website's index page.
+</p>
+
+{{ RenderIndex .Request "" "" }}
 {{ end }}

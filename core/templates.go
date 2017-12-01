@@ -2,6 +2,7 @@ package core
 
 import (
 	"html/template"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ import (
 // variables in. It auto-loads global template variables (site name, etc.)
 // when the template is rendered.
 type Vars struct {
-	// Global template variables.
+	// Global, "constant" template variables.
 	SetupNeeded bool
 	Title       string
 	Path        string
@@ -23,6 +24,9 @@ type Vars struct {
 	CurrentUser *users.User
 	CSRF        string
 	Request     *http.Request
+
+	// Configuration variables
+	NoLayout bool // don't wrap in .layout.html, just render the template
 
 	// Common template variables.
 	Message string
@@ -47,7 +51,7 @@ func NewVars(data ...map[interface{}]interface{}) *Vars {
 }
 
 // LoadDefaults combines template variables with default, globally available vars.
-func (v *Vars) LoadDefaults(b *Blog, w http.ResponseWriter, r *http.Request) {
+func (v *Vars) LoadDefaults(b *Blog, r *http.Request) {
 	// Get the site settings.
 	s, err := settings.Load()
 	if err != nil {
@@ -64,39 +68,44 @@ func (v *Vars) LoadDefaults(b *Blog, w http.ResponseWriter, r *http.Request) {
 	user, err := b.CurrentUser(r)
 	v.CurrentUser = user
 	v.LoggedIn = err == nil
-
-	// Add any flashed messages from the endpoint controllers.
-	session := b.Session(r)
-	if flashes := session.Flashes(); len(flashes) > 0 {
-		for _, flash := range flashes {
-			_ = flash
-			v.Flashes = append(v.Flashes, flash.(string))
-		}
-		session.Save(r, w)
-	}
-
-	v.CSRF = b.GenerateCSRFToken(w, r, session)
 }
 
-// TemplateVars is an interface that describes the template variable struct.
-type TemplateVars interface {
-	LoadDefaults(*Blog, http.ResponseWriter, *http.Request)
-}
+// // TemplateVars is an interface that describes the template variable struct.
+// type TemplateVars interface {
+// 	LoadDefaults(*Blog, *http.Request)
+// }
 
-// RenderTemplate responds with an HTML template.
-func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path string, vars TemplateVars) error {
-	// Get the layout template.
-	layout, err := b.ResolvePath(".layout")
-	if err != nil {
-		log.Error("RenderTemplate(%s): layout template not found", path)
-		return err
-	}
+// RenderPartialTemplate handles rendering a Go template to a writer, without
+// doing anything extra to the vars or dealing with net/http. This is ideal for
+// rendering partials, such as comment partials.
+//
+// This will wrap the template in `.layout.gohtml` by default. To render just
+// a bare template on its own, i.e. for partial templates, create a Vars struct
+// with `Vars{NoIndex: true}`
+func (b *Blog) RenderPartialTemplate(w io.Writer, path string, v interface{}, withLayout bool, functions map[string]interface{}) error {
+	var (
+		layout       Filepath
+		templateName string
+		err          error
+	)
 
-	// And the template in question.
+	// Find the file path to the template.
 	filepath, err := b.ResolvePath(path)
 	if err != nil {
 		log.Error("RenderTemplate(%s): file not found", path)
 		return err
+	}
+
+	// Get the layout template.
+	if withLayout {
+		templateName = "layout"
+		layout, err = b.ResolvePath(".layout")
+		if err != nil {
+			log.Error("RenderTemplate(%s): layout template not found", path)
+			return err
+		}
+	} else {
+		templateName = filepath.Basename
 	}
 
 	// The comment entry partial.
@@ -106,39 +115,76 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 		return err
 	}
 
-	// Useful template functions.
-	t := template.New(filepath.Absolute).Funcs(template.FuncMap{
+	// Template functions.
+	funcmap := template.FuncMap{
 		"StringsJoin": strings.Join,
 		"Now":         time.Now,
+		"RenderIndex": b.RenderIndex,
 		"RenderPost":  b.RenderPost,
+	}
+	if functions != nil {
+		for name, fn := range functions {
+			funcmap[name] = fn
+		}
+	}
+
+	// Useful template functions.
+	t := template.New(filepath.Absolute).Funcs(funcmap)
+
+	// Parse the template files. The layout comes first because it's the wrapper
+	// and allows the filepath template to set the page title.
+	var templates []string
+	if withLayout {
+		templates = append(templates, layout.Absolute)
+	}
+	t, err = t.ParseFiles(append(templates, commentEntry.Absolute, filepath.Absolute)...)
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
+
+	err = t.ExecuteTemplate(w, templateName, v)
+	if err != nil {
+		log.Error("Template parsing error: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+// RenderTemplate responds with an HTML template.
+//
+// The vars will be massaged a bit to load the global defaults (such as the
+// website title and user login status), the user's session may be updated with
+// new CSRF token, and other such things. If you just want to render a template
+// without all that nonsense, use RenderPartialTemplate.
+func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path string, vars *Vars) error {
+	// Inject globally available variables.
+	if vars == nil {
+		vars = &Vars{}
+	}
+	vars.LoadDefaults(b, r)
+
+	// Add any flashed messages from the endpoint controllers.
+	session := b.Session(r)
+	if flashes := session.Flashes(); len(flashes) > 0 {
+		for _, flash := range flashes {
+			_ = flash
+			vars.Flashes = append(vars.Flashes, flash.(string))
+		}
+		session.Save(r, w)
+	}
+
+	vars.CSRF = b.GenerateCSRFToken(w, r, session)
+
+	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
+	b.RenderPartialTemplate(w, path, vars, true, template.FuncMap{
 		"RenderComments": func(subject string, ids ...string) template.HTML {
 			session := b.Session(r)
 			csrf := b.GenerateCSRFToken(w, r, session)
 			return b.RenderComments(session, csrf, r.URL.Path, subject, ids...)
 		},
 	})
-
-	// Parse the template files. The layout comes first because it's the wrapper
-	// and allows the filepath template to set the page title.
-	t, err = t.ParseFiles(layout.Absolute, commentEntry.Absolute, filepath.Absolute)
-	if err != nil {
-		log.Error(err.Error())
-		return err
-	}
-
-	// Inject globally available variables.
-	if vars == nil {
-		vars = &Vars{}
-	}
-	vars.LoadDefaults(b, w, r)
-
-	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
-	err = t.ExecuteTemplate(w, "layout", vars)
-	if err != nil {
-		log.Error("Template parsing error: %s", err)
-		return err
-	}
-
 	log.Debug("Parsed template")
 
 	return nil
