@@ -2,6 +2,8 @@ package core
 
 import (
 	"errors"
+	"html/template"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -39,6 +41,26 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	// Is it a template file?
 	if strings.HasSuffix(filepath.URI, ".gohtml") || strings.HasSuffix(filepath.URI, ".html") {
 		b.RenderTemplate(w, r, filepath.URI, nil)
+		return
+	}
+
+	// Is it a Markdown file?
+	if strings.HasSuffix(filepath.URI, ".md") || strings.HasSuffix(filepath.URI, ".markdown") {
+		source, err := ioutil.ReadFile(filepath.Absolute)
+		if err != nil {
+			b.Error(w, r, "Couldn't read Markdown source!")
+			return
+		}
+
+		// Render it to HTML and find out its title.
+		body := string(source)
+		html := b.RenderTrustedMarkdown(body)
+		title, _ := TitleFromMarkdown(body)
+
+		b.RenderTemplate(w, r, ".markdown", NewVars(map[interface{}]interface{}{
+			"Title": title,
+			"HTML":  template.HTML(html),
+		}))
 		return
 	}
 

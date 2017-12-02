@@ -16,6 +16,19 @@ cd ~/go/src/github.com/kirsle/blog
 make run
 ```
 
+## Syntax Highlighting with Pygments
+
+To enable syntax highlighting within Markdown files (like with GitHub Flavored
+Markdown), install [pygments](http://pygments.org) on your system. For example:
+
+```
+# Fedora/RHEL
+sudo dnf install python3-pygments python3-pygments-markdown-lexer
+
+# Debian
+sudo apt install python3-pygments
+```
+
 # License
 
 MIT.

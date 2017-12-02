@@ -60,9 +60,20 @@ func (b *Blog) Forbidden(w http.ResponseWriter, r *http.Request, message ...stri
 	}
 }
 
+// Error sends an HTTP 500 Internal Server Error response.
+func (b *Blog) Error(w http.ResponseWriter, r *http.Request, message ...string) {
+	w.WriteHeader(http.StatusInternalServerError)
+	err := b.RenderTemplate(w, r, ".errors/500", &Vars{
+		Message: message[0],
+	})
+	if err != nil {
+		log.Error(err.Error())
+		w.Write([]byte("Unrecoverable template error for Error()"))
+	}
+}
+
 // BadRequest sends an HTTP 400 Bad Request.
 func (b *Blog) BadRequest(w http.ResponseWriter, r *http.Request, message ...string) {
-	log.Error("HERE 4")
 	w.WriteHeader(http.StatusBadRequest)
 	err := b.RenderTemplate(w, r, ".errors/400", &Vars{
 		Message: message[0],
