@@ -1,6 +1,9 @@
 package posts
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // UpdateIndex updates a post's metadata in the blog index.
 func UpdateIndex(p *Post) error {
@@ -66,6 +69,59 @@ func (idx *Index) Update(p *Post) error {
 func (idx *Index) Delete(p *Post) error {
 	delete(idx.Posts, p.ID)
 	return DB.Commit("blog/index", idx)
+}
+
+// Tag is a response from Tags including metadata about it.
+type Tag struct {
+	Name  string
+	Count int
+}
+
+type ByPopularity []Tag
+
+func (s ByPopularity) Len() int {
+	return len(s)
+}
+func (s ByPopularity) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s ByPopularity) Less(i, j int) bool {
+	if s[i].Count < s[j].Count {
+		return true
+	} else if s[i].Count > s[j].Count {
+		return false
+	}
+	return s[i].Name < s[j].Name
+}
+
+// Tags returns the tags sorted by most frequent.
+func (idx *Index) Tags() ([]Tag, error) {
+	idx, err := GetIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	unique := map[string]*Tag{}
+
+	for _, post := range idx.Posts {
+		for _, name := range post.Tags {
+			tag, ok := unique[name]
+			if !ok {
+				tag = &Tag{name, 0}
+				unique[name] = tag
+			}
+			tag.Count++
+		}
+	}
+
+	// Sort the tags.
+	tags := []Tag{}
+	for _, tag := range unique {
+		tags = append(tags, *tag)
+	}
+	sort.Sort(sort.Reverse(ByPopularity(tags)))
+
+	return tags, nil
 }
 
 // CleanupFragments to clean up old URL fragments.

@@ -2,13 +2,13 @@
 <div class="card mb-4">
     <div class="card-body">
         <div class="row">
-            <div class="col-2">
+            <div class="markdown col-12 col-lg-1 mb-1">
                 <img src="{{ .Avatar }}"
                     width="96"
                     height="96"
                     alt="Avatar image">
             </div>
-            <div class="col-10">
+            <div class="markdown col-12 col-lg-11">
                 <div class="comment-meta">
                     {{ if and .UserID .Username }}
                         <a href="/u/{{ .Username }}"><strong>{{ or .Name "Anonymous" }}</strong></a>

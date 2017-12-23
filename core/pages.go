@@ -13,7 +13,7 @@ import (
 // PageHandler is the catch-all route handler, for serving static web pages.
 func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-	log.Debug("Catch-all page handler invoked for request URI: %s", path)
+	// log.Debug("Catch-all page handler invoked for request URI: %s", path)
 
 	// Remove trailing slashes by redirecting them away.
 	if len(path) > 1 && path[len(path)-1] == '/' {
@@ -39,7 +39,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Is it a template file?
-	if strings.HasSuffix(filepath.URI, ".gohtml") || strings.HasSuffix(filepath.URI, ".html") {
+	if strings.HasSuffix(filepath.URI, ".gohtml") {
 		b.RenderTemplate(w, r, filepath.URI, nil)
 		return
 	}

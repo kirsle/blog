@@ -62,6 +62,7 @@ func New(documentRoot, userRoot string) *Blog {
 	r.HandleFunc("/login", blog.LoginHandler)
 	r.HandleFunc("/logout", blog.LogoutHandler)
 	blog.AdminRoutes(r)
+	blog.ContactRoutes(r)
 	blog.BlogRoutes(r)
 	blog.CommentRoutes(r)
 

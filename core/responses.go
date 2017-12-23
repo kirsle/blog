@@ -37,7 +37,6 @@ func (b *Blog) NotFound(w http.ResponseWriter, r *http.Request, message ...strin
 		message = []string{"The page you were looking for was not found."}
 	}
 
-	log.Error("HERE 2")
 	w.WriteHeader(http.StatusNotFound)
 	err := b.RenderTemplate(w, r, ".errors/404", &Vars{
 		Message: message[0],

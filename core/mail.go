@@ -17,6 +17,7 @@ import (
 // Email configuration.
 type Email struct {
 	To             string
+	ReplyTo        string
 	Admin          bool /* admin view of the email */
 	Subject        string
 	UnsubscribeURL string
@@ -71,6 +72,9 @@ func (b *Blog) SendEmail(email Email) {
 	m := gomail.NewMessage()
 	m.SetHeader("From", fmt.Sprintf("%s <%s>", s.Site.Title, s.Mail.Sender))
 	m.SetHeader("To", email.To)
+	if email.ReplyTo != "" {
+		m.SetHeader("Reply-To", email.ReplyTo)
+	}
 	m.SetHeader("Subject", email.Subject)
 	m.SetBody("text/plain", plaintext)
 	m.AddAlternative("text/html", html.String())
@@ -81,6 +85,8 @@ func (b *Blog) SendEmail(email Email) {
 			InsecureSkipVerify: true,
 		}
 	}
+
+	log.Info("SendEmail: %s (%s) to %s", email.Subject, email.Template, email.To)
 	if err := d.DialAndSend(m); err != nil {
 		log.Error("SendEmail: %s", err.Error())
 	}

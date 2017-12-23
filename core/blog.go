@@ -40,6 +40,7 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 	// Public routes
 	r.HandleFunc("/blog", b.IndexHandler)
 	r.HandleFunc("/archive", b.BlogArchive)
+	r.HandleFunc("/tagged", b.Tagged)
 	r.HandleFunc("/tagged/{tag}", b.Tagged)
 
 	// Login-required routers.
@@ -75,7 +76,9 @@ func (b *Blog) Tagged(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	tag, ok := params["tag"]
 	if !ok {
-		b.BadRequest(w, r, "Missing category in URL")
+		// They're listing all the tags.
+		b.RenderTemplate(w, r, "blog/tags.gohtml", NewVars())
+		return
 	}
 
 	b.CommonIndexHandler(w, r, tag, "")
@@ -199,20 +202,6 @@ func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 			log.Error("couldn't load full post data for ID %d (found in index.json)", pool[i].ID)
 			continue
 		}
-		var rendered template.HTML
-
-		// Body has a snipped section?
-		if strings.Contains(post.Body, "<snip>") {
-			parts := strings.SplitN(post.Body, "<snip>", 1)
-			post.Body = parts[0]
-		}
-
-		// Render the post.
-		if post.ContentType == string(MARKDOWN) {
-			rendered = template.HTML(b.RenderTrustedMarkdown(post.Body))
-		} else {
-			rendered = template.HTML(post.Body)
-		}
 
 		// Look up the author's information.
 		author, err := users.LoadReadonly(post.AuthorID)
@@ -229,7 +218,6 @@ func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 
 		view = append(view, PostMeta{
 			Post:        post,
-			Rendered:    rendered,
 			Author:      author,
 			NumComments: numComments,
 		})
@@ -243,6 +231,31 @@ func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 		"View":         view,
 	}
 	b.RenderPartialTemplate(&output, "blog/index.partial", v, false, nil)
+
+	return template.HTML(output.String())
+}
+
+// RenderTags renders the tags partial.
+func (b *Blog) RenderTags(r *http.Request, indexView bool) template.HTML {
+	idx, err := posts.GetIndex()
+	if err != nil {
+		return template.HTML("[RenderTags: error getting blog index]")
+	}
+
+	tags, err := idx.Tags()
+	if err != nil {
+		return template.HTML("[RenderTags: error getting tags]")
+	}
+
+	var output bytes.Buffer
+	v := struct {
+		IndexView bool
+		Tags      []posts.Tag
+	}{
+		IndexView: indexView,
+		Tags:      tags,
+	}
+	b.RenderPartialTemplate(&output, "blog/tags.partial", v, false, nil)
 
 	return template.HTML(output.String())
 }
@@ -266,7 +279,7 @@ func (b *Blog) BlogArchive(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		label := post.Created.Format("2006-02")
+		label := post.Created.Format("2006-01")
 		if _, ok := byMonth[label]; !ok {
 			months = append(months, label)
 			byMonth[label] = &Archive{
@@ -335,12 +348,13 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool, numComments int) templa
 	var snipped bool
 	if indexView {
 		if strings.Contains(p.Body, "<snip>") {
-			log.Warn("HAS SNIP TAG!")
 			parts := strings.SplitN(p.Body, "<snip>", 2)
 			p.Body = parts[0]
 			snipped = true
 		}
 	}
+
+	p.Body = strings.Replace(p.Body, "<snip>", "<div id=\"snip\"></div>", 1)
 
 	// Render the post to HTML.
 	var rendered template.HTML

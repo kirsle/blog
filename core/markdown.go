@@ -18,7 +18,7 @@ var (
 	reMarkdownTitle = regexp.MustCompile(`(?m:^#([^#\r\n]+)$)`)
 
 	// Match fenced code blocks with languages defined.
-	reFencedCode = regexp.MustCompile("```" + `([a-z]*)\n([\s\S]*?)\n\s*` + "```")
+	reFencedCode = regexp.MustCompile("```" + `([a-z]*)[\r\n]([\s\S]*?)[\r\n]\s*` + "```")
 
 	// Regexp to match fenced code blocks in rendered Markdown HTML.
 	// Tweak this if you change Markdown engines later.
@@ -66,7 +66,6 @@ func (b *Blog) RenderMarkdown(input string) string {
 func (b *Blog) RenderTrustedMarkdown(input string) string {
 	// Find and hang on to fenced code blocks.
 	codeBlocks := []codeBlock{}
-	log.Info("RE: %s", reFencedCode.String())
 	matches := reFencedCode.FindAllStringSubmatch(input, -1)
 	for i, m := range matches {
 		language, source := m[1], m[2]

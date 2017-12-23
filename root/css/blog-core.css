@@ -29,9 +29,3 @@ a.blog-title {
     font-size: smaller;
     margin-bottom: 1rem;
 }
-
-/* Code blocks treated as <pre> tags */
-.markdown code {
-    display: block;
-    white-space: pre-line;
-}

@@ -44,7 +44,12 @@ func main() {
 	app := core.New(DocumentRoot, userRoot)
 	if fDebug {
 		app.Debug = true
+	}
+
+	// Set $JSONDB_DEBUG=1 to debug JsonDB; it's very noisy!
+	if os.Getenv("JSONDB_DEBUG") != "" {
 		jsondb.SetDebug(true)
 	}
+
 	app.ListenAndServe(fAddress)
 }

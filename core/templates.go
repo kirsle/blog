@@ -121,6 +121,7 @@ func (b *Blog) RenderPartialTemplate(w io.Writer, path string, v interface{}, wi
 		"Now":         time.Now,
 		"RenderIndex": b.RenderIndex,
 		"RenderPost":  b.RenderPost,
+		"RenderTags":  b.RenderTags,
 	}
 	if functions != nil {
 		for name, fn := range functions {
@@ -185,7 +186,6 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 			return b.RenderComments(session, csrf, r.URL.Path, subject, ids...)
 		},
 	})
-	log.Debug("Parsed template")
 
 	return nil
 }
