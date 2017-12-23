@@ -58,8 +58,9 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 		title, _ := TitleFromMarkdown(body)
 
 		b.RenderTemplate(w, r, ".markdown", NewVars(map[interface{}]interface{}{
-			"Title": title,
-			"HTML":  template.HTML(html),
+			"Title":        title,
+			"HTML":         template.HTML(html),
+			"MarkdownFile": filepath.URI,
 		}))
 		return
 	}

@@ -13,6 +13,22 @@
 </div>
 {{ end }}
 
+<style type="text/css" media="screen">
+#editor-box {
+    position: relative;
+    display: none;
+    width: 100%;
+    height: 500px;
+}
+#ace-editor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+</style>
+
 {{ with .Data.post }}
 <input type="hidden" name="id" value="{{ .ID }}">
 <div class="card">
@@ -52,6 +68,7 @@
                         class="form-check-input"
                         name="content-type"
                         value="markdown"
+                        onChange="setSyntax(this.value)"
                         {{ if eq .ContentType "markdown" }}checked{{ end }}
                     > Markdown
                 </label>
@@ -62,15 +79,21 @@
                         class="form-check-input"
                         name="content-type"
                         value="html"
+                        onChange="setSyntax(this.value)"
                         {{ if eq .ContentType "html" }}checked{{ end }}
                     > Raw HTML
                 </label>
+            </div>
+
+            <div id="editor-box">
+                <div id="ace-editor">{{ .Body }}</div>
             </div>
 
             <textarea class="form-control"
                 cols="80"
                 rows="12"
                 name="body"
+                id="body"
                 placeholder="Post body goes here">{{ .Body }}</textarea>
         </div>
 
@@ -137,4 +160,38 @@
 {{ end }}
 
 </form>
+
+<script src="/js/ace-editor/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+var ACE;
+(function() {
+    var editor = ace.edit("ace-editor");
+    ACE = editor;
+    document.querySelector("#editor-box").style.display = "block";
+    document.querySelector("#body").style.display = "none";
+
+    // Default editor settings
+    editor.setTheme("ace/theme/monokai");
+    var ses = editor.getSession();
+    ses.setTabSize(4);
+    ses.setUseSoftTabs(true);
+
+    // On save.
+    ses.on("change", function() {
+        document.getElementById("body").value = editor.getValue();
+    });
+
+    setSyntax("markdown");
+})();
+
+function setSyntax(lang) {
+    if (typeof(ACE) !== undefined) {
+        ACE.getSession().setMode("ace/mode/"+lang);
+        if (lang === "markdown") {
+            ACE.getSession().setTabSize(2);
+        }
+    }
+    return false;
+}
+</script>
 {{ end }}

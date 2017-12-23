@@ -20,11 +20,11 @@ import (
 
 // AdminRoutes attaches the admin routes to the app.
 func (b *Blog) AdminRoutes(r *mux.Router) {
-	adminRouter := mux.NewRouter().PathPrefix("/admin").Subrouter().StrictSlash(false)
-	r.HandleFunc("/admin", b.AdminHandler) // so as to not be "/admin/"
+	adminRouter := mux.NewRouter().PathPrefix("/admin").Subrouter().StrictSlash(true)
+	adminRouter.HandleFunc("/", b.AdminHandler)
 	adminRouter.HandleFunc("/settings", b.SettingsHandler)
 	adminRouter.HandleFunc("/editor", b.EditorHandler)
-	adminRouter.PathPrefix("/").HandlerFunc(b.PageHandler)
+	// r.HandleFunc("/admin", b.AdminHandler)
 	r.PathPrefix("/admin").Handler(negroni.New(
 		negroni.HandlerFunc(b.LoginRequired),
 		negroni.Wrap(adminRouter),

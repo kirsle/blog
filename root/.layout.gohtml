@@ -81,7 +81,7 @@
 
             {{ if and .CurrentUser.Admin .Editable }}
                 <p class="mt-4">
-                    <strong>Admin:</strong> [<a href="/admin/editor?file={{ TemplateName }}">edit this page</a>]
+                    <strong>Admin:</strong> [<a href="/admin/editor?file={{ or .Data.MarkdownFile TemplateName }}">edit this page</a>]
                 </p>
             {{ end }}
         </div>
@@ -197,7 +197,6 @@
     </div>
 </footer>
 
-<script type="text/javascript" src="/js/bootstrap.min.js"></script>
 {{ template "scripts" or "" }}
 
 </body>

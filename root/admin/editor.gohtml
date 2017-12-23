@@ -9,6 +9,25 @@
     </p>
 {{ end }}
 
+<style type="text/css" media="screen">
+#editor-box {
+    position: relative;
+    display: none;
+    width: 100%;
+    height: 500px;
+}
+#ace-editor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+#ace-buttons {
+    display: none;
+}
+</style>
+
 <form action="/admin/editor" method="POST">
     <input type="hidden" name="_csrf" value="{{ .CSRF }}">
     <input type="hidden" name="save" value="true">
@@ -31,6 +50,18 @@
         <label for="body">
             Content:
         </label>
+        <div id="editor-box">
+            <div id="ace-editor">{{ .Data.Body }}</div>
+        </div>
+
+        <div id="ace-buttons">
+            Syntax:
+                <a href="#" onClick="return setSyntax('html')" class="btn btn-secondary btn-sm">HTML</a>
+                <a href="#" onClick="return setSyntax('markdown')" class="btn btn-secondary btn-sm">Markdown</a>
+                <a href="#" onClick="return setSyntax('javascript')" class="btn btn-secondary btn-sm">JS</a>
+                <a href="#" onClick="return setSyntax('css')" class="btn btn-secondary btn-sm">CSS</a>
+                <a href="#" onClick="return setSyntax('text')" class="btn btn-secondary btn-sm">None</a>
+        </div>
         <textarea
             cols="40"
             rows="12"
@@ -45,4 +76,49 @@
         <button type="submit" name="action" value="delete" class="btn btn-danger" onClick="return window.confirm('Are you sure?')">Delete Page</button>
     </p>
 </form>
+
+<script src="/js/ace-editor/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+var ACE;
+(function() {
+    var editor = ace.edit("ace-editor");
+    ACE = editor;
+    document.querySelector("#editor-box").style.display = "block";
+    document.querySelector("#ace-buttons").style.display = "block";
+    document.querySelector("#body").style.display = "none";
+
+    // Default editor settings
+    editor.setTheme("ace/theme/monokai");
+    var ses = editor.getSession();
+    ses.setTabSize(4);
+    ses.setUseSoftTabs(true);
+
+    // On save.
+    ses.on("change", function() {
+        document.getElementById("body").value = editor.getValue();
+    });
+
+    var filename = "{{ .Data.File }}";
+    var parts = filename.split(".");
+    var ext = parts.pop().toLowerCase();
+    if (ext === "js") {
+        ses.setMode("ace/mode/javascript");
+    } else if (ext === "gohtml" || ext === "html") {
+        ses.setMode("ace/mode/html");
+    } else if (ext === "md" || ext === "markdown") {
+        ses.setMode("ace/mode/markdown");
+        ses.setTabSize(2);
+    } else if (ext === "css") {
+        ses.setMode("ace/mode/css");
+    }
+})();
+
+function setSyntax(lang) {
+    if (typeof(ACE) !== undefined) {
+        ACE.getSession().setMode("ace/mode/"+lang);
+    }
+    return false;
+}
+</script>
+
 {{ end }}
