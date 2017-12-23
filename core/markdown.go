@@ -115,7 +115,7 @@ func (b *Blog) Pygmentize(language, source string) (string, error) {
 	cacheKey := "pygmentize:" + hash
 
 	// Do we have it cached?
-	if cached, err := b.Cache.Get(cacheKey); err == nil {
+	if cached, err := b.Cache.Get(cacheKey); err == nil && len(cached) > 0 {
 		return string(cached), nil
 	}
 

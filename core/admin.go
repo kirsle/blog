@@ -1,10 +1,13 @@
 package core
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/kirsle/blog/core/caches/null"
+	"github.com/kirsle/blog/core/caches/redis"
 	"github.com/kirsle/blog/core/forms"
 	"github.com/kirsle/blog/core/models/settings"
 	"github.com/urfave/negroni"
@@ -43,12 +46,12 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 			Title:        r.FormValue("title"),
 			AdminEmail:   r.FormValue("admin-email"),
 			URL:          r.FormValue("url"),
-			RedisEnabled: r.FormValue("redis-enabled") == "true",
+			RedisEnabled: len(r.FormValue("redis-enabled")) > 0,
 			RedisHost:    r.FormValue("redis-host"),
 			RedisPort:    redisPort,
 			RedisDB:      redisDB,
 			RedisPrefix:  r.FormValue("redis-prefix"),
-			MailEnabled:  r.FormValue("mail-enabled") == "true",
+			MailEnabled:  len(r.FormValue("mail-enabled")) > 0,
 			MailSender:   r.FormValue("mail-sender"),
 			MailHost:     r.FormValue("mail-host"),
 			MailPort:     mailPort,
@@ -78,6 +81,25 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// Save the settings.
 			settings.Save()
+
+			// Reset Redis configuration.
+			if settings.Redis.Enabled {
+				cache, err := redis.New(
+					fmt.Sprintf("%s:%d", settings.Redis.Host, settings.Redis.Port),
+					settings.Redis.DB,
+					settings.Redis.Prefix,
+				)
+				if err != nil {
+					b.Flash(w, r, "Error connecting to Redis: %s", err)
+					b.Cache = null.New()
+				} else {
+					b.Cache = cache
+				}
+			} else {
+				b.Cache = null.New()
+			}
+			b.DB.Cache = b.Cache
+
 			b.FlashAndReload(w, r, "Settings have been saved!")
 			return
 		}
