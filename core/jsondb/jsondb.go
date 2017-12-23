@@ -164,7 +164,11 @@ func (db *DB) ListAll(path string) ([]string, error) {
 func (db *DB) makePath(path string) error {
 	parts := strings.Split(path, string(filepath.Separator))
 	parts = parts[:len(parts)-1] // pop off the filename
-	directory := "/" + filepath.Join(parts...)
+	directory, err := filepath.Abs(filepath.Join(parts...))
+	if err != nil {
+		log.Error("[JsonDB] Couldn't get abs path to %s", path)
+		return err
+	}
 
 	if _, err := os.Stat(directory); err != nil {
 		log.Debug("[JsonDB] Create directory: %s", directory)

@@ -78,6 +78,12 @@
             {{ end }}
 
             {{ template "content" . }}
+
+            {{ if and .CurrentUser.Admin .Editable }}
+                <p class="mt-4">
+                    <strong>Admin:</strong> [<a href="/admin/editor?file={{ TemplateName }}">edit this page</a>]
+                </p>
+            {{ end }}
         </div>
         <div class="col-3">
 
@@ -95,7 +101,7 @@
                     <h4 class="cart-title">Control Center</h4>
 
                     <p>
-                        Logged in as: <a href="/u/{{ .CurrentUser.Username }}">{{ .CurrentUser.Username }}</a>
+                        Logged in as: {{ .CurrentUser.Username }}
                     </p>
 
                     <ul class="list-unstyled">

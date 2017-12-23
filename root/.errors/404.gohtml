@@ -3,4 +3,15 @@
 <h1>404 Not Found</h1>
 
 {{ .Message }}
+
+{{ if .CurrentUser.Admin }}
+    <p>
+        <strong>Admin:</strong> create a
+        <a href="/admin/editor?file={{ .Request.URL.Path }}.md">Markdown</a>
+        or
+        <a href="/admin/editor?file={{ .Request.URL.Path }}.gohtml">HTML</a>
+        page here.
+    </p>
+{{ end }}
+
 {{ end }}

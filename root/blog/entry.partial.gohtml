@@ -23,7 +23,7 @@
             (updated {{ $p.Updated.Format "January 2, 2006" }})
         </span>
     {{ end }}
-    by <a href="/u/{{ $a.Username }}">{{ or $a.Name $a.Username }}</a>
+    by {{ or $a.Name $a.Username }}
 </div>
 
 <div class="markdown mb-4">

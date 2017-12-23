@@ -23,6 +23,7 @@ type Vars struct {
 	LoggedIn        bool
 	CurrentUser     *users.User
 	CSRF            string
+	Editable        bool // page is editable
 	Request         *http.Request
 	RequestTime     time.Time
 	RequestDuration time.Duration
@@ -125,6 +126,9 @@ func (b *Blog) RenderPartialTemplate(w io.Writer, path string, v interface{}, wi
 		"RenderIndex": b.RenderIndex,
 		"RenderPost":  b.RenderPost,
 		"RenderTags":  b.RenderTags,
+		"TemplateName": func() string {
+			return filepath.URI
+		},
 	}
 	if functions != nil {
 		for name, fn := range functions {
@@ -181,6 +185,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 
 	vars.RequestDuration = time.Now().Sub(vars.RequestTime)
 	vars.CSRF = b.GenerateCSRFToken(w, r, session)
+	vars.Editable = !strings.HasPrefix(path, "admin/")
 
 	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
 	b.RenderPartialTemplate(w, path, vars, true, template.FuncMap{

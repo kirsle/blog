@@ -1,0 +1,34 @@
+{{ define "title" }}Page Editor{{ end }}
+{{ define "content" }}
+<h1>Page Editor</h1>
+
+{{ range .Data.FileTrees }}
+    {{ if .UserRoot }}
+        <h2>User Root</h2>
+        <p>
+            These are your custom web files that override those in the CoreRoot.
+        </p>
+
+        <ul>
+        {{ range .Files }}
+            <li><a href="/admin/editor?file={{ .Relative }}">{{ .Relative }}</a></li>
+        {{ end }}
+        </ul>
+    {{ else }}
+        <h2>Core Root</h2>
+        <p>
+            These are the blog's built-in web files. If you edit them, your
+            changes will be saved into your User Root to override the file
+            from the Core Root.
+        </p>
+
+        <ul>
+        {{ range .Files }}
+            <li><a href="/admin/editor?file={{ .Relative }}&from=core">{{ .Relative }}</a></li>
+        {{ end }}
+        </ul>
+    {{ end }}
+{{ end }}
+
+</form>
+{{ end }}

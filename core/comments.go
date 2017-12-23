@@ -70,7 +70,7 @@ func (b *Blog) RenderComments(session *sessions.Session, csrfToken, url, subject
 		// Look up the author username.
 		if c.UserID > 0 {
 			if _, ok := userMap[c.UserID]; !ok {
-				if user, err := users.Load(c.UserID); err == nil {
+				if user, err2 := users.Load(c.UserID); err2 == nil {
 					userMap[c.UserID] = user
 				}
 			}
@@ -220,7 +220,11 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Append their comment.
-			t.Post(c)
+			err := t.Post(c)
+			if err != nil {
+				b.FlashAndRedirect(w, r, c.OriginURL, "Error posting comment: %s", err)
+				return
+			}
 			b.NotifyComment(c)
 
 			// Are they subscribing to future comments?
@@ -236,6 +240,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			b.FlashAndRedirect(w, r, c.OriginURL, "Comment posted!")
+			log.Info("t: %v", t.Comments)
 			return
 		}
 	}

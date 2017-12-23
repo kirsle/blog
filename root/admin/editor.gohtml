@@ -1,0 +1,48 @@
+{{ define "title" }}Page Editor{{ end }}
+{{ define "content" }}
+<h1>Edit: {{ .Data.File }}</h1>
+
+{{ if .Data.FromCore }}
+    <p>
+        <strong>Note:</strong> this page is from the blog core root, so changes
+        made will be saved to your user root instead.
+    </p>
+{{ end }}
+
+<form action="/admin/editor" method="POST">
+    <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+    <input type="hidden" name="save" value="true">
+
+    <div class="form-group">
+        <label for="file">
+            Filepath:
+        </label>
+        <input type="text"
+            size="40"
+            id="file"
+            name="file"
+            value="{{ .Data.File }}"
+            placeholder="path/to/file.gohtml"
+            class="form-control"
+            required>
+    </div>
+
+    <div class="form-group">
+        <label for="body">
+            Content:
+        </label>
+        <textarea
+            cols="40"
+            rows="12"
+            id="body"
+            name="body"
+            class="form-control"
+            required>{{ .Data.Body }}</textarea>
+    </div>
+
+    <p>
+        <button type="submit" name="action" value="save" class="btn btn-primary">Save Page</button>
+        <button type="submit" name="action" value="delete" class="btn btn-danger" onClick="return window.confirm('Are you sure?')">Delete Page</button>
+    </p>
+</form>
+{{ end }}
