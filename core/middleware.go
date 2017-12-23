@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
@@ -15,13 +16,23 @@ type key int
 const (
 	sessionKey key = iota
 	userKey
+	requestTimeKey
 )
 
 // SessionLoader gets the Gorilla session store and makes it available on the
 // Request context.
+//
+// SessionLoader is the first custom middleware applied, so it takes the current
+// datetime to make available later in the request and stores it on the request
+// context.
 func (b *Blog) SessionLoader(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	// Store the current datetime on the request context.
+	ctx := context.WithValue(r.Context(), requestTimeKey, time.Now())
+
+	// Get the Gorilla session and make it available in the request context.
 	session, _ := b.store.Get(r, "session")
-	ctx := context.WithValue(r.Context(), sessionKey, session)
+	ctx = context.WithValue(ctx, sessionKey, session)
+
 	next(w, r.WithContext(ctx))
 }
 

@@ -2,8 +2,10 @@ package core
 
 import (
 	"bytes"
+	"crypto/md5"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -85,7 +87,7 @@ func (b *Blog) RenderTrustedMarkdown(input string) string {
 
 	// Substitute fenced codes back in.
 	for _, block := range codeBlocks {
-		highlighted, _ := Pygmentize(block.language, block.source)
+		highlighted, _ := b.Pygmentize(block.language, block.source)
 		html = strings.Replace(html,
 			fmt.Sprintf("[?FENCED_CODE_%d_BLOCK?]", block.placeholder),
 			highlighted,
@@ -101,10 +103,24 @@ func (b *Blog) RenderTrustedMarkdown(input string) string {
 //
 // On error the original given source is returned back.
 //
-// TODO: this takes ~0.6s per go, we need something faster.
-func Pygmentize(language, source string) (string, error) {
-	bin := "pygmentize"
+// The rendered result is cached in Redis if available, because the CLI
+// call takes ~0.6s which is slow if you're rendering a lot of code blocks.
+func (b *Blog) Pygmentize(language, source string) (string, error) {
+	var result string
 
+	// Hash the source for the cache key.
+	h := md5.New()
+	io.WriteString(h, language+source)
+	hash := fmt.Sprintf("%x", h.Sum(nil))
+	cacheKey := "pygmentize:" + hash
+
+	// Do we have it cached?
+	if cached, err := b.Cache.Get(cacheKey); err == nil {
+		return string(cached), nil
+	}
+
+	// Defer to the `pygmentize` command
+	bin := "pygmentize"
 	if _, err := exec.LookPath(bin); err != nil {
 		return source, errors.New("pygmentize not installed")
 	}
@@ -123,5 +139,11 @@ func Pygmentize(language, source string) (string, error) {
 		return source, err
 	}
 
-	return out.String(), nil
+	result = out.String()
+	err := b.Cache.Set(cacheKey, []byte(result), 60*60*24) // cool md5's don't change
+	if err != nil {
+		log.Error("Couldn't cache Pygmentize output: %s", err)
+	}
+
+	return result, nil
 }

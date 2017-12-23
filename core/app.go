@@ -1,11 +1,15 @@
 package core
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/kirsle/blog/core/caches"
+	"github.com/kirsle/blog/core/caches/null"
+	"github.com/kirsle/blog/core/caches/redis"
 	"github.com/kirsle/blog/core/jsondb"
 	"github.com/kirsle/blog/core/models/comments"
 	"github.com/kirsle/blog/core/models/posts"
@@ -24,7 +28,8 @@ type Blog struct {
 	DocumentRoot string
 	UserRoot     string
 
-	DB *jsondb.DB
+	DB    *jsondb.DB
+	Cache caches.Cacher
 
 	// Web app objects.
 	n     *negroni.Negroni // Negroni middleware manager
@@ -38,6 +43,7 @@ func New(documentRoot, userRoot string) *Blog {
 		DocumentRoot: documentRoot,
 		UserRoot:     userRoot,
 		DB:           jsondb.New(filepath.Join(userRoot, ".private")),
+		Cache:        null.New(),
 	}
 
 	// Load the site config, or start with defaults if not found.
@@ -55,6 +61,23 @@ func New(documentRoot, userRoot string) *Blog {
 	posts.DB = blog.DB
 	users.DB = blog.DB
 	comments.DB = blog.DB
+
+	// Redis cache?
+	if config.Redis.Enabled {
+		addr := fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port)
+		log.Info("Connecting to Redis at %s/%d", addr, config.Redis.DB)
+		cache, err := redis.New(
+			addr,
+			config.Redis.DB,
+			config.Redis.Prefix,
+		)
+		if err != nil {
+			log.Error("Redis init error: %s", err.Error())
+		} else {
+			blog.Cache = cache
+			blog.DB.Cache = cache
+		}
+	}
 
 	// Initialize the router.
 	r := mux.NewRouter()

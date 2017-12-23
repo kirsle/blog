@@ -17,13 +17,15 @@ import (
 // when the template is rendered.
 type Vars struct {
 	// Global, "constant" template variables.
-	SetupNeeded bool
-	Title       string
-	Path        string
-	LoggedIn    bool
-	CurrentUser *users.User
-	CSRF        string
-	Request     *http.Request
+	SetupNeeded     bool
+	Title           string
+	Path            string
+	LoggedIn        bool
+	CurrentUser     *users.User
+	CSRF            string
+	Request         *http.Request
+	RequestTime     time.Time
+	RequestDuration time.Duration
 
 	// Configuration variables
 	NoLayout bool // don't wrap in .layout.html, just render the template
@@ -62,6 +64,7 @@ func (v *Vars) LoadDefaults(b *Blog, r *http.Request) {
 		v.SetupNeeded = true
 	}
 	v.Request = r
+	v.RequestTime = r.Context().Value(requestTimeKey).(time.Time)
 	v.Title = s.Site.Title
 	v.Path = r.URL.Path
 
@@ -176,6 +179,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 		session.Save(r, w)
 	}
 
+	vars.RequestDuration = time.Now().Sub(vars.RequestTime)
 	vars.CSRF = b.GenerateCSRFToken(w, r, session)
 
 	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
