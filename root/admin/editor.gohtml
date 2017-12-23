@@ -91,7 +91,8 @@ var ACE;
     editor.setTheme("ace/theme/monokai");
     var ses = editor.getSession();
     ses.setTabSize(4);
-    ses.setUseSoftTabs(true);
+    ses.setUseSoftTabs(false);
+    ses.setUseWrapMode(true);
 
     // On save.
     ses.on("change", function() {
