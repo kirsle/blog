@@ -42,6 +42,15 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 	r.HandleFunc("/archive", b.BlogArchive)
 	r.HandleFunc("/tagged", b.Tagged)
 	r.HandleFunc("/tagged/{tag}", b.Tagged)
+	r.HandleFunc("/blog/entry/{fragment}", func(w http.ResponseWriter, r *http.Request) {
+		params := mux.Vars(r)
+		fragment, ok := params["fragment"]
+		if !ok {
+			b.NotFound(w, r, "Not Found")
+			return
+		}
+		b.Redirect(w, "/"+fragment)
+	})
 
 	// Login-required routers.
 	loginRouter := mux.NewRouter()
