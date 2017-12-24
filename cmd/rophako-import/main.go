@@ -169,6 +169,8 @@ func migrateComments() {
 			t = comments.New(id)
 		}
 
+		// Convert the legacy comments into new-style ones.
+		var newComments []*comments.Comment
 		for commentID, legacy := range legacyThread {
 			// Convert unix times to proper times.
 			time := time.Unix(int64(legacy.Time), 0)
@@ -185,13 +187,15 @@ func migrateComments() {
 				Updated:     time,
 			}
 			new.LoadAvatar() // in case it has none
-
-			log.Debug("Comment by %s on thread %s", new.Name, id)
-			t.Post(new)
+			newComments = append(newComments, new)
 		}
 
-		// Re-sort the comments by date.
+		// Re-sort the comments by date and post them in order.
 		sort.Sort(comments.ByCreated(t.Comments))
+		for _, c := range newComments {
+			log.Debug("Comment by %s on thread %s", c.Name, id)
+			t.Post(c)
+		}
 
 		// Check for subscribers
 		subs := legacySubscribers{}
