@@ -15,6 +15,13 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 		Form: forms.Setup{},
 	}
 
+	// Reject if we're already set up.
+	s, _ := settings.Load()
+	if s.Initialized {
+		b.FlashAndRedirect(w, r, "/", "This website has already been configured.")
+		return
+	}
+
 	if r.Method == http.MethodPost {
 		form := forms.Setup{
 			Username: r.FormValue("username"),
