@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/forms"
@@ -48,6 +51,22 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 						"Email":   form.Email,
 					},
 				})
+
+				// Log it to disk, too.
+				fh, err := os.OpenFile(filepath.Join(b.UserRoot, ".contact.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+				if err != nil {
+					b.Flash(w, r, "Error logging the message to disk: %s", err)
+				} else {
+					fh.WriteString(fmt.Sprintf(
+						"Date: %s\nName: %s\nEmail: %s\nSubject: %s\n\n%s\n\n--------------------\n\n",
+						time.Now().Format(time.UnixDate),
+						form.Name,
+						form.Email,
+						form.Subject,
+						form.Message,
+					))
+					fh.Close()
+				}
 				b.FlashAndRedirect(w, r, "/contact", "Your message has been sent.")
 			}
 		}
