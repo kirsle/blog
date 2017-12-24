@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -188,6 +189,9 @@ func migrateComments() {
 			log.Debug("Comment by %s on thread %s", new.Name, id)
 			t.Post(new)
 		}
+
+		// Re-sort the comments by date.
+		sort.Sort(comments.ByCreated(t.Comments))
 
 		// Check for subscribers
 		subs := legacySubscribers{}

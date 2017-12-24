@@ -60,6 +60,12 @@ type Comment struct {
 	Editing         bool   `json:"-"`
 }
 
+type ByCreated []*Comment
+
+func (a ByCreated) Len() int           { return len(a) }
+func (a ByCreated) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByCreated) Less(i, j int) bool { return a[i].Created.Before(a[j].Created) }
+
 // New initializes a new comment thread.
 func New(id string) Thread {
 	return Thread{
