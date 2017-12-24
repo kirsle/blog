@@ -164,10 +164,11 @@ func (db *DB) ListAll(path string) ([]string, error) {
 func (db *DB) makePath(path string) error {
 	parts := strings.Split(path, string(filepath.Separator))
 	parts = parts[:len(parts)-1] // pop off the filename
-	directory, err := filepath.Abs(filepath.Join(parts...))
-	if err != nil {
-		log.Error("[JsonDB] Couldn't get abs path to %s", path)
-		return err
+	var directory string
+	if path[0] == '/' {
+		directory = "/" + filepath.Join(parts...)
+	} else {
+		directory = filepath.Join(parts...)
 	}
 
 	if _, err := os.Stat(directory); err != nil {
@@ -240,5 +241,9 @@ func (db *DB) writeJSON(path string, v interface{}) error {
 
 // toPath translates a document name into a filesystem path.
 func (db *DB) toPath(document string) string {
-	return filepath.Join(db.Root, document+".json")
+	path, err := filepath.Abs(filepath.Join(db.Root, document+".json"))
+	if err != nil {
+		log.Error("[JsonDB] toPath error: %s", err)
+	}
+	return path
 }
