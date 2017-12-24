@@ -4,9 +4,17 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/forms"
 	"github.com/kirsle/blog/core/models/users"
 )
+
+// AuthRoutes attaches the auth routes to the app.
+func (b *Blog) AuthRoutes(r *mux.Router) {
+	r.HandleFunc("/login", b.LoginHandler)
+	r.HandleFunc("/logout", b.LogoutHandler)
+	r.HandleFunc("/account", b.AccountHandler)
+}
 
 // Login logs the browser in as the given user.
 func (b *Blog) Login(w http.ResponseWriter, r *http.Request, u *users.User) error {
@@ -74,4 +82,85 @@ func (b *Blog) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	delete(session.Values, "user-id")
 	session.Save(r, w)
 	b.Redirect(w, "/")
+}
+
+// AccountHandler shows the account settings page.
+func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
+	if !b.LoggedIn(r) {
+		b.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!")
+		return
+	}
+	currentUser, err := b.CurrentUser(r)
+	if err != nil {
+		b.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!!")
+		return
+	}
+
+	// Load an editable copy of the user.
+	user, err := users.Load(currentUser.ID)
+	if err != nil {
+		b.FlashAndRedirect(w, r, "/login?next=/account", "User ID %d not loadable?", currentUser.ID)
+		return
+	}
+
+	v := NewVars()
+	form := &forms.Account{
+		Username: user.Username,
+		Email:    user.Email,
+		Name:     user.Name,
+	}
+	v.Form = form
+
+	if r.Method == http.MethodPost {
+		form.Username = users.Normalize(r.FormValue("username"))
+		form.Email = r.FormValue("email")
+		form.Name = r.FormValue("name")
+		form.OldPassword = r.FormValue("oldpassword")
+		form.NewPassword = r.FormValue("newpassword")
+		form.NewPassword2 = r.FormValue("newpassword2")
+		if err = form.Validate(); err != nil {
+			b.Flash(w, r, err.Error())
+		} else {
+			var ok = true
+
+			// Validate the username is available.
+			if form.Username != user.Username {
+				if _, err = users.LoadUsername(form.Username); err == nil {
+					b.Flash(w, r, "That username already exists.")
+					ok = false
+				}
+			}
+
+			// Changing their password?
+			if len(form.OldPassword) > 0 {
+				// Validate their old password.
+				if _, err = users.CheckAuth(form.Username, form.OldPassword); err != nil {
+					b.Flash(w, r, "Your old password is incorrect.")
+					ok = false
+				} else {
+					err = user.SetPassword(form.NewPassword)
+					if err != nil {
+						b.Flash(w, r, "Change password error: %s", err)
+						ok = false
+					}
+				}
+			}
+
+			// Still good?
+			if ok {
+				user.Username = form.Username
+				user.Name = form.Name
+				user.Email = form.Email
+				err = user.Save()
+				if err != nil {
+					b.Flash(w, r, "Error saving user: %s", err)
+				} else {
+					b.FlashAndRedirect(w, r, "/account", "Settings saved!")
+					return
+				}
+			}
+		}
+	}
+
+	b.RenderTemplate(w, r, "account", v)
 }

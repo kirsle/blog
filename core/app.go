@@ -82,8 +82,7 @@ func New(documentRoot, userRoot string) *Blog {
 	// Initialize the router.
 	r := mux.NewRouter()
 	r.HandleFunc("/initial-setup", blog.SetupHandler)
-	r.HandleFunc("/login", blog.LoginHandler)
-	r.HandleFunc("/logout", blog.LogoutHandler)
+	blog.AuthRoutes(r)
 	blog.AdminRoutes(r)
 	blog.ContactRoutes(r)
 	blog.BlogRoutes(r)
