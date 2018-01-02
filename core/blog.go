@@ -42,7 +42,7 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 	r.HandleFunc("/archive", b.BlogArchive)
 	r.HandleFunc("/tagged", b.Tagged)
 	r.HandleFunc("/tagged/{tag}", b.Tagged)
-	r.HandleFunc("/category/{tag}", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/blog/category/{tag}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		tag, ok := params["tag"]
 		if !ok {
