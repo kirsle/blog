@@ -26,7 +26,6 @@ func (b *Blog) FlashAndReload(w http.ResponseWriter, r *http.Request, message st
 
 // Redirect sends an HTTP redirect response.
 func (b *Blog) Redirect(w http.ResponseWriter, location string) {
-	log.Error("Redirect: %s", location)
 	w.Header().Set("Location", location)
 	w.WriteHeader(http.StatusFound)
 }
