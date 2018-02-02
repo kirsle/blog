@@ -110,10 +110,17 @@ func (b *Blog) RSSHandler(w http.ResponseWriter, r *http.Request) {
 
 	feed.Items = []*feeds.Item{}
 	for i, p := range b.RecentPosts(r, "", "") {
+		post, _ := posts.Load(p.ID)
+		var suffix string
+		if strings.Contains(post.Body, "<snip>") {
+			post.Body = strings.Split(post.Body, "<snip>")[0]
+			suffix = "..."
+		}
+
 		feed.Items = append(feed.Items, &feeds.Item{
 			Title:       p.Title,
 			Link:        &feeds.Link{Href: config.Site.URL + p.Fragment},
-			Description: strings.Split(p.Body, "<snip>")[0],
+			Description: post.Body + suffix,
 			Created:     p.Created,
 		})
 		if i >= 5 {
