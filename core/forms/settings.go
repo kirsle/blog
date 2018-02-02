@@ -8,6 +8,7 @@ import (
 // Settings are the user-facing admin settings.
 type Settings struct {
 	Title        string
+	Description  string
 	AdminEmail   string
 	URL          string
 	RedisEnabled bool

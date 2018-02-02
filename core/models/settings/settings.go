@@ -17,9 +17,10 @@ type Settings struct {
 	Initialized bool `json:"initialized"`
 
 	Site struct {
-		Title      string `json:"title"`
-		AdminEmail string `json:"adminEmail"`
-		URL        string `json:"url"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		AdminEmail  string `json:"adminEmail"`
+		URL         string `json:"url"`
 	} `json:"site"`
 
 	// Security-related settings.

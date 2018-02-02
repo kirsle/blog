@@ -11,9 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/feeds"
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/models/comments"
 	"github.com/kirsle/blog/core/models/posts"
+	"github.com/kirsle/blog/core/models/settings"
 	"github.com/kirsle/blog/core/models/users"
 	"github.com/urfave/negroni"
 )
@@ -39,6 +41,8 @@ type Archive struct {
 func (b *Blog) BlogRoutes(r *mux.Router) {
 	// Public routes
 	r.HandleFunc("/blog", b.IndexHandler)
+	r.HandleFunc("/blog.rss", b.RSSHandler)
+	r.HandleFunc("/blog.atom", b.RSSHandler)
 	r.HandleFunc("/archive", b.BlogArchive)
 	r.HandleFunc("/tagged", b.Tagged)
 	r.HandleFunc("/tagged/{tag}", b.Tagged)
@@ -82,6 +86,51 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 		negroni.HandlerFunc(b.LoginRequired),
 		negroni.Wrap(adminRouter),
 	))
+}
+
+// RSSHandler renders an RSS feed from the blog.
+func (b *Blog) RSSHandler(w http.ResponseWriter, r *http.Request) {
+	config, _ := settings.Load()
+	admin, err := users.Load(1)
+	if err != nil {
+		b.Error(w, r, "Blog isn't ready yet.")
+		return
+	}
+
+	feed := &feeds.Feed{
+		Title:       config.Site.Title,
+		Link:        &feeds.Link{Href: config.Site.URL},
+		Description: config.Site.Description,
+		Author: &feeds.Author{
+			Name:  admin.Name,
+			Email: admin.Email,
+		},
+		Created: time.Now(),
+	}
+
+	feed.Items = []*feeds.Item{}
+	for i, p := range b.RecentPosts(r, "", "") {
+		feed.Items = append(feed.Items, &feeds.Item{
+			Title:       p.Title,
+			Link:        &feeds.Link{Href: config.Site.URL + p.Fragment},
+			Description: strings.Split(p.Body, "<snip>")[0],
+			Created:     p.Created,
+		})
+		if i >= 5 {
+			break
+		}
+	}
+
+	// What format to encode it in?
+	if strings.Contains(r.URL.Path, ".atom") {
+		atom, _ := feed.ToAtom()
+		w.Header().Set("Content-Type", "application/atom+xml")
+		w.Write([]byte(atom))
+	} else {
+		rss, _ := feed.ToRss()
+		w.Header().Set("Content-Type", "application/rss+xml")
+		w.Write([]byte(rss))
+	}
 }
 
 // IndexHandler renders the main index page of the blog.
@@ -133,8 +182,8 @@ func (b *Blog) CommonIndexHandler(w http.ResponseWriter, r *http.Request, tag, p
 	}))
 }
 
-// RenderIndex renders and returns the blog index partial.
-func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
+// RecentPosts gets and filters the blog entries and orders them by most recent.
+func (b *Blog) RecentPosts(r *http.Request, tag, privacy string) []posts.Post {
 	// Get the blog index.
 	idx, _ := posts.GetIndex()
 
@@ -182,11 +231,17 @@ func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 		pool = append(pool, post)
 	}
 
+	sort.Sort(sort.Reverse(posts.ByUpdated(pool)))
+	return pool
+}
+
+// RenderIndex renders and returns the blog index partial.
+func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
+	// Get the recent blog entries, filtered by the tag/privacy settings.
+	pool := b.RecentPosts(r, tag, privacy)
 	if len(pool) == 0 {
 		return template.HTML("No blog posts were found.")
 	}
-
-	sort.Sort(sort.Reverse(posts.ByUpdated(pool)))
 
 	// Query parameters.
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))

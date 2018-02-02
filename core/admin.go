@@ -185,6 +185,7 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		mailPort, _ := strconv.Atoi(r.FormValue("mail-port"))
 		form := &forms.Settings{
 			Title:        r.FormValue("title"),
+			Description:  r.FormValue("description"),
 			AdminEmail:   r.FormValue("admin-email"),
 			URL:          r.FormValue("url"),
 			RedisEnabled: len(r.FormValue("redis-enabled")) > 0,
@@ -203,6 +204,7 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		// Copy form values into the settings struct for display, in case of
 		// any validation errors.
 		settings.Site.Title = form.Title
+		settings.Site.Description = form.Description
 		settings.Site.AdminEmail = form.AdminEmail
 		settings.Site.URL = form.URL
 		settings.Redis.Enabled = form.RedisEnabled
