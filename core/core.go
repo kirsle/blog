@@ -9,7 +9,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/internal/controllers/admin"
 	"github.com/kirsle/blog/core/internal/controllers/authctl"
+	commentctl "github.com/kirsle/blog/core/internal/controllers/comments"
 	"github.com/kirsle/blog/core/internal/controllers/contact"
+	postctl "github.com/kirsle/blog/core/internal/controllers/posts"
 	"github.com/kirsle/blog/core/internal/controllers/setup"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
@@ -113,9 +115,9 @@ func (b *Blog) SetupHTTP() {
 	setup.Register(r)
 	authctl.Register(r)
 	admin.Register(r, b.MustLogin)
-	contact.Register(r, b.Error)
-	b.BlogRoutes(r)
-	b.CommentRoutes(r)
+	contact.Register(r)
+	postctl.Register(r, b.MustLogin)
+	commentctl.Register(r)
 
 	// GitHub Flavored Markdown CSS.
 	r.Handle("/css/gfm.css", http.StripPrefix("/css", http.FileServer(gfmstyle.Assets)))
@@ -127,7 +129,7 @@ func (b *Blog) SetupHTTP() {
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
 		negroni.HandlerFunc(sessions.Middleware),
-		negroni.HandlerFunc(middleware.CSRF(b.Forbidden)),
+		negroni.HandlerFunc(middleware.CSRF(responses.Forbidden)),
 		negroni.HandlerFunc(auth.Middleware),
 	)
 	n.UseHandler(r)

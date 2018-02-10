@@ -1,4 +1,4 @@
-package core
+package comments
 
 import (
 	"bytes"
@@ -19,13 +19,16 @@ import (
 	"github.com/kirsle/blog/core/internal/sessions"
 )
 
-// CommentRoutes attaches the comment routes to the app.
-func (b *Blog) CommentRoutes(r *mux.Router) {
-	render.Funcs["RenderComments"] = b.RenderComments
+var badRequest func(http.ResponseWriter, *http.Request, string)
 
-	r.HandleFunc("/comments", b.CommentHandler)
-	r.HandleFunc("/comments/subscription", b.SubscriptionHandler)
-	r.HandleFunc("/comments/quick-delete", b.QuickDeleteHandler)
+// Register the comment routes to the app.
+func Register(r *mux.Router) {
+	badRequest = responses.BadRequest
+	render.Funcs["RenderComments"] = RenderComments
+
+	r.HandleFunc("/comments", commentHandler)
+	r.HandleFunc("/comments/subscription", subscriptionHandler)
+	r.HandleFunc("/comments/quick-delete", quickDeleteHandler)
 }
 
 // CommentMeta is the template variables for comment threads.
@@ -40,7 +43,7 @@ type CommentMeta struct {
 }
 
 // RenderComments renders a comment form partial and returns the HTML.
-func (b *Blog) RenderComments(r *http.Request, subject string, ids ...string) template.HTML {
+func RenderComments(r *http.Request, subject string, ids ...string) template.HTML {
 	id := strings.Join(ids, "-")
 	session := sessions.Get(r)
 	url := r.URL.Path
@@ -141,14 +144,13 @@ func (b *Blog) RenderComments(r *http.Request, subject string, ids ...string) te
 	return template.HTML(output.String())
 }
 
-// CommentHandler handles the /comments URI for previewing and posting.
-func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
+func commentHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		b.BadRequest(w, r, "That method is not allowed.")
+		badRequest(w, r, "That method is not allowed.")
 		return
 	}
 	currentUser, _ := auth.CurrentUser(r)
-	editToken := b.GetEditToken(w, r)
+	editToken := getEditToken(w, r)
 	submit := r.FormValue("submit")
 
 	// Load the comment data from the form.
@@ -207,14 +209,14 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Previewing, deleting, or posting?
 	switch submit {
-	case ActionPreview, ActionDelete:
+	case "preview", "delete":
 		if !c.Editing && currentUser.IsAuthenticated {
 			c.Name = currentUser.Name
 			c.Email = currentUser.Email
 			c.LoadAvatar()
 		}
 		c.HTML = template.HTML(markdown.RenderMarkdown(c.Body))
-	case ActionPost:
+	case "post":
 		if err := c.Validate(); err != nil {
 			v["Error"] = err
 		} else {
@@ -258,55 +260,22 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 	v["Thread"] = t
 	v["Comment"] = c
 	v["Editing"] = c.Editing
-	v["Deleting"] = submit == ActionDelete
+	v["Deleting"] = submit == "delete"
 
 	render.Template(w, r, "comments/index.gohtml", v)
 }
 
-// SubscriptionHandler to opt out of subscriptions.
-func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
-	// POST to unsubscribe from all threads.
-	if r.Method == http.MethodPost {
-		email := r.FormValue("email")
-		if email == "" {
-			b.BadRequest(w, r, "email address is required to unsubscribe from comment threads")
-		} else if _, err := mail.ParseAddress(email); err != nil {
-			b.BadRequest(w, r, "invalid email address")
-		}
-
-		m := comments.LoadMailingList()
-		m.UnsubscribeAll(email)
-		responses.FlashAndRedirect(w, r, "/comments/subscription",
-			"You have been unsubscribed from all mailing lists.",
-		)
-		return
-	}
-
-	// GET to unsubscribe from a single thread.
-	thread := r.URL.Query().Get("t")
-	email := r.URL.Query().Get("e")
-	if thread != "" && email != "" {
-		m := comments.LoadMailingList()
-		m.Unsubscribe(thread, email)
-		responses.FlashAndRedirect(w, r, "/comments/subscription", "You have been unsubscribed successfully.")
-		return
-	}
-
-	render.Template(w, r, "comments/subscription.gohtml", nil)
-}
-
-// QuickDeleteHandler allows the admin to quickly delete spam without logging in.
-func (b *Blog) QuickDeleteHandler(w http.ResponseWriter, r *http.Request) {
+func quickDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	thread := r.URL.Query().Get("t")
 	token := r.URL.Query().Get("d")
 	if thread == "" || token == "" {
-		b.BadRequest(w, r, "Bad Request")
+		badRequest(w, r, "Bad Request")
 		return
 	}
 
 	t, err := comments.Load(thread)
 	if err != nil {
-		b.BadRequest(w, r, "Comment thread does not exist.")
+		badRequest(w, r, "Comment thread does not exist.")
 		return
 	}
 
@@ -317,9 +286,9 @@ func (b *Blog) QuickDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	responses.FlashAndRedirect(w, r, "/", "Comment deleted!")
 }
 
-// GetEditToken gets or generates an edit token from the user's session, which
+// getEditToken gets or generates an edit token from the user's session, which
 // allows a user to edit their comment for a short while after they post it.
-func (b *Blog) GetEditToken(w http.ResponseWriter, r *http.Request) string {
+func getEditToken(w http.ResponseWriter, r *http.Request) string {
 	session := sessions.Get(r)
 	if token, ok := session.Values["c.token"].(string); ok && len(token) > 0 {
 		return token

@@ -7,6 +7,14 @@ import (
 	"github.com/kirsle/blog/core/internal/sessions"
 )
 
+// Error handlers to be filled in by the blog app.
+var (
+	NotFound   func(http.ResponseWriter, *http.Request, string)
+	Forbidden  func(http.ResponseWriter, *http.Request, string)
+	BadRequest func(http.ResponseWriter, *http.Request, string)
+	Error      func(http.ResponseWriter, *http.Request, string)
+)
+
 // Flash adds a flash message to the user's session.
 func Flash(w http.ResponseWriter, r *http.Request, message string, args ...interface{}) {
 	session := sessions.Get(r)

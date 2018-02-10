@@ -18,7 +18,7 @@ import (
 )
 
 // Register attaches the contact URL to the app.
-func Register(r *mux.Router, onError func(http.ResponseWriter, *http.Request, string)) {
+func Register(r *mux.Router) {
 	r.HandleFunc("/contact", func(w http.ResponseWriter, r *http.Request) {
 		form := &forms.Contact{}
 		v := map[string]interface{}{
@@ -28,13 +28,13 @@ func Register(r *mux.Router, onError func(http.ResponseWriter, *http.Request, st
 		// If there is no site admin, show an error.
 		cfg, err := settings.Load()
 		if err != nil {
-			onError(w, r, "Error loading site configuration!")
+			responses.Error(w, r, "Error loading site configuration!")
 			return
 		} else if cfg.Site.AdminEmail == "" {
-			onError(w, r, "There is no admin email configured for this website!")
+			responses.Error(w, r, "There is no admin email configured for this website!")
 			return
 		} else if !cfg.Mail.Enabled {
-			onError(w, r, "This website doesn't have an e-mail gateway configured.")
+			responses.Error(w, r, "This website doesn't have an e-mail gateway configured.")
 			return
 		}
 

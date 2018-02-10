@@ -1,4 +1,4 @@
-package core
+package types
 
 // PostPrivacy values.
 type PostPrivacy string

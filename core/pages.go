@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kirsle/blog/core/internal/controllers/posts"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/render"
 	"github.com/kirsle/blog/core/internal/responses"
@@ -24,7 +25,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Restrict special paths.
 	if strings.HasPrefix(strings.ToLower(path), "/.") {
-		b.Forbidden(w, r, "Forbidden")
+		responses.Forbidden(w, r, "Forbidden")
 		return
 	}
 
@@ -32,9 +33,9 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	filepath, err := render.ResolvePath(path)
 	if err != nil {
 		// See if it resolves as a blog entry.
-		err = b.viewPost(w, r, strings.TrimLeft(path, "/"))
+		err = postctl.ViewPost(w, r, strings.TrimLeft(path, "/"))
 		if err != nil {
-			b.NotFound(w, r, "The page you were looking for was not found.")
+			responses.NotFound(w, r, "The page you were looking for was not found.")
 		}
 		return
 	}
@@ -49,7 +50,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.HasSuffix(filepath.URI, ".md") || strings.HasSuffix(filepath.URI, ".markdown") {
 		source, err := ioutil.ReadFile(filepath.Absolute)
 		if err != nil {
-			b.Error(w, r, "Couldn't read Markdown source!")
+			responses.Error(w, r, "Couldn't read Markdown source!")
 			return
 		}
 
