@@ -3,12 +3,12 @@ package core
 import (
 	"net/http"
 
-	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/internal/forms"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/sessions"
 )
 
 // SetupHandler is the initial blog setup route.
@@ -41,7 +41,7 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 			s.Save()
 
 			// Re-initialize the cookie store with the new secret key.
-			b.store = sessions.NewCookieStore([]byte(s.Security.SecretKey))
+			sessions.SetSecretKey([]byte(s.Security.SecretKey))
 
 			log.Info("Creating admin account %s", form.Username)
 			user := &users.User{

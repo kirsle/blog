@@ -8,9 +8,13 @@ import (
 	"time"
 
 	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/middleware"
+	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/sessions"
+	"github.com/kirsle/blog/core/internal/types"
 )
 
 // Vars is an interface to implement by the templates to pass their own custom
@@ -66,11 +70,11 @@ func (b *Blog) LoadDefaults(v render.Vars, r *http.Request) render.Vars {
 		v.SetupNeeded = true
 	}
 	v.Request = r
-	v.RequestTime = r.Context().Value(requestTimeKey).(time.Time)
+	v.RequestTime = r.Context().Value(types.StartTimeKey).(time.Time)
 	v.Title = s.Site.Title
 	v.Path = r.URL.Path
 
-	user, err := b.CurrentUser(r)
+	user, err := auth.CurrentUser(r)
 	v.CurrentUser = user
 	v.LoggedIn = err == nil
 
@@ -109,7 +113,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	vars = b.LoadDefaults(vars, r)
 
 	// Add any flashed messages from the endpoint controllers.
-	session := b.Session(r)
+	session := sessions.Get(r)
 	if flashes := session.Flashes(); len(flashes) > 0 {
 		for _, flash := range flashes {
 			_ = flash
@@ -119,7 +123,7 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	}
 
 	vars.RequestDuration = time.Now().Sub(vars.RequestTime)
-	vars.CSRF = b.GenerateCSRFToken(w, r, session)
+	vars.CSRF = middleware.GenerateCSRFToken(w, r, session)
 	vars.Editable = !strings.HasPrefix(path, "admin/")
 
 	return render.Template(w, path, render.Config{
@@ -140,8 +144,8 @@ func (b *Blog) TemplateFuncs(w http.ResponseWriter, r *http.Request, inject map[
 				return template.HTML("[RenderComments Error: need both http.ResponseWriter and http.Request]")
 			}
 
-			session := b.Session(r)
-			csrf := b.GenerateCSRFToken(w, r, session)
+			session := sessions.Get(r)
+			csrf := middleware.GenerateCSRFToken(w, r, session)
 			return b.RenderComments(session, csrf, r.URL.Path, subject, ids...)
 		},
 	}

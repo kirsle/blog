@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/render"
 	"github.com/urfave/negroni"
@@ -24,7 +25,7 @@ func (b *Blog) AdminRoutes(r *mux.Router) {
 	adminRouter.HandleFunc("/editor", b.EditorHandler)
 	// r.HandleFunc("/admin", b.AdminHandler)
 	r.PathPrefix("/admin").Handler(negroni.New(
-		negroni.HandlerFunc(b.LoginRequired),
+		negroni.HandlerFunc(auth.LoginRequired(b.MustLogin)),
 		negroni.Wrap(adminRouter),
 	))
 }
@@ -48,8 +49,8 @@ func (b *Blog) EditorHandler(w http.ResponseWriter, r *http.Request) {
 		var (
 			fp       string
 			fromCore = r.FormValue("from") == "core"
-			saving   = r.FormValue("action") == "save"
-			deleting = r.FormValue("action") == "delete"
+			saving   = r.FormValue("action") == ActionSave
+			deleting = r.FormValue("action") == ActionDelete
 			body     = []byte{}
 		)
 

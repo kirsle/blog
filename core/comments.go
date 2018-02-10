@@ -10,12 +10,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
+	gorilla "github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
+	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/sessions"
 )
 
 // CommentRoutes attaches the comment routes to the app.
@@ -37,7 +39,7 @@ type CommentMeta struct {
 }
 
 // RenderComments renders a comment form partial and returns the HTML.
-func (b *Blog) RenderComments(session *sessions.Session, csrfToken, url, subject string, ids ...string) template.HTML {
+func (b *Blog) RenderComments(session *gorilla.Session, csrfToken, url, subject string, ids ...string) template.HTML {
 	id := strings.Join(ids, "-")
 
 	// Load their cached name and email if they posted a comment before.
@@ -142,7 +144,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v := NewVars()
-	currentUser, _ := b.CurrentUser(r)
+	currentUser, _ := auth.CurrentUser(r)
 	editToken := b.GetEditToken(w, r)
 	submit := r.FormValue("submit")
 
@@ -193,21 +195,21 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cache their name and email in their session.
-	session := b.Session(r)
+	session := sessions.Get(r)
 	session.Values["c.name"] = c.Name
 	session.Values["c.email"] = c.Email
 	session.Save(r, w)
 
 	// Previewing, deleting, or posting?
 	switch submit {
-	case "preview", "delete":
+	case ActionPreview, ActionDelete:
 		if !c.Editing && currentUser.IsAuthenticated {
 			c.Name = currentUser.Name
 			c.Email = currentUser.Email
 			c.LoadAvatar()
 		}
 		c.HTML = template.HTML(markdown.RenderMarkdown(c.Body))
-	case "post":
+	case ActionPost:
 		if err := c.Validate(); err != nil {
 			v.Error = err
 		} else {
@@ -251,7 +253,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 	v.Data["Thread"] = t
 	v.Data["Comment"] = c
 	v.Data["Editing"] = c.Editing
-	v.Data["Deleting"] = submit == "delete"
+	v.Data["Deleting"] = submit == ActionDelete
 
 	b.RenderTemplate(w, r, "comments/index.gohtml", v)
 }
@@ -295,7 +297,7 @@ func (b *Blog) QuickDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	thread := r.URL.Query().Get("t")
 	token := r.URL.Query().Get("d")
 	if thread == "" || token == "" {
-		b.BadRequest(w, r)
+		b.BadRequest(w, r, "Bad Request")
 		return
 	}
 
@@ -315,7 +317,7 @@ func (b *Blog) QuickDeleteHandler(w http.ResponseWriter, r *http.Request) {
 // GetEditToken gets or generates an edit token from the user's session, which
 // allows a user to edit their comment for a short while after they post it.
 func (b *Blog) GetEditToken(w http.ResponseWriter, r *http.Request) string {
-	session := b.Session(r)
+	session := sessions.Get(r)
 	if token, ok := session.Values["c.token"].(string); ok && len(token) > 0 {
 		return token
 	}

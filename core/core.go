@@ -7,14 +7,16 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
+	"github.com/kirsle/blog/core/internal/middleware"
+	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/posts"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/sessions"
 	"github.com/kirsle/blog/jsondb"
 	"github.com/kirsle/blog/jsondb/caches"
 	"github.com/kirsle/blog/jsondb/caches/null"
@@ -36,9 +38,8 @@ type Blog struct {
 	Cache caches.Cacher
 
 	// Web app objects.
-	n     *negroni.Negroni // Negroni middleware manager
-	r     *mux.Router      // Router
-	store sessions.Store
+	n *negroni.Negroni // Negroni middleware manager
+	r *mux.Router      // Router
 }
 
 // New initializes the Blog application.
@@ -73,7 +74,7 @@ func (b *Blog) Configure() {
 	render.DocumentRoot = &b.DocumentRoot
 
 	// Initialize the session cookie store.
-	b.store = sessions.NewCookieStore([]byte(config.Security.SecretKey))
+	sessions.SetSecretKey([]byte(config.Security.SecretKey))
 	users.HashCost = config.Security.HashCost
 
 	// Initialize the rest of the models.
@@ -120,9 +121,9 @@ func (b *Blog) SetupHTTP() {
 	n := negroni.New(
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
-		negroni.HandlerFunc(b.SessionLoader),
-		negroni.HandlerFunc(b.CSRFMiddleware),
-		negroni.HandlerFunc(b.AuthMiddleware),
+		negroni.HandlerFunc(sessions.Middleware),
+		negroni.HandlerFunc(middleware.CSRF(b.Forbidden)),
+		negroni.HandlerFunc(auth.Middleware),
 	)
 	n.UseHandler(r)
 

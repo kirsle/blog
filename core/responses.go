@@ -6,11 +6,12 @@ import (
 
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/sessions"
 )
 
 // Flash adds a flash message to the user's session.
 func (b *Blog) Flash(w http.ResponseWriter, r *http.Request, message string, args ...interface{}) {
-	session := b.Session(r)
+	session := sessions.Get(r)
 	session.AddFlash(fmt.Sprintf(message, args...))
 	session.Save(r, w)
 }
@@ -34,14 +35,14 @@ func (b *Blog) Redirect(w http.ResponseWriter, location string) {
 }
 
 // NotFound sends a 404 response.
-func (b *Blog) NotFound(w http.ResponseWriter, r *http.Request, message ...string) {
-	if len(message) == 0 {
-		message = []string{"The page you were looking for was not found."}
+func (b *Blog) NotFound(w http.ResponseWriter, r *http.Request, message string) {
+	if message == "" {
+		message = "The page you were looking for was not found."
 	}
 
 	w.WriteHeader(http.StatusNotFound)
 	err := b.RenderTemplate(w, r, ".errors/404", render.Vars{
-		Message: message[0],
+		Message: message,
 	})
 	if err != nil {
 		log.Error(err.Error())
@@ -50,10 +51,10 @@ func (b *Blog) NotFound(w http.ResponseWriter, r *http.Request, message ...strin
 }
 
 // Forbidden sends an HTTP 403 Forbidden response.
-func (b *Blog) Forbidden(w http.ResponseWriter, r *http.Request, message ...string) {
+func (b *Blog) Forbidden(w http.ResponseWriter, r *http.Request, message string) {
 	w.WriteHeader(http.StatusForbidden)
 	err := b.RenderTemplate(w, r, ".errors/403", render.Vars{
-		Message: message[0],
+		Message: message,
 	})
 	if err != nil {
 		log.Error(err.Error())
@@ -62,10 +63,10 @@ func (b *Blog) Forbidden(w http.ResponseWriter, r *http.Request, message ...stri
 }
 
 // Error sends an HTTP 500 Internal Server Error response.
-func (b *Blog) Error(w http.ResponseWriter, r *http.Request, message ...string) {
+func (b *Blog) Error(w http.ResponseWriter, r *http.Request, message string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	err := b.RenderTemplate(w, r, ".errors/500", render.Vars{
-		Message: message[0],
+		Message: message,
 	})
 	if err != nil {
 		log.Error(err.Error())
@@ -74,10 +75,10 @@ func (b *Blog) Error(w http.ResponseWriter, r *http.Request, message ...string) 
 }
 
 // BadRequest sends an HTTP 400 Bad Request.
-func (b *Blog) BadRequest(w http.ResponseWriter, r *http.Request, message ...string) {
+func (b *Blog) BadRequest(w http.ResponseWriter, r *http.Request, message string) {
 	w.WriteHeader(http.StatusBadRequest)
 	err := b.RenderTemplate(w, r, ".errors/400", render.Vars{
-		Message: message[0],
+		Message: message,
 	})
 	if err != nil {
 		log.Error(err.Error())

@@ -23,7 +23,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Restrict special paths.
 	if strings.HasPrefix(strings.ToLower(path), "/.") {
-		b.Forbidden(w, r)
+		b.Forbidden(w, r, "Forbidden")
 		return
 	}
 

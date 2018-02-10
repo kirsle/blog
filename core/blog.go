@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
+	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/posts"
 	"github.com/kirsle/blog/core/internal/models/settings"
@@ -76,19 +77,10 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 	loginRouter.HandleFunc("/blog/private", b.PrivatePosts)
 	r.PathPrefix("/blog").Handler(
 		negroni.New(
-			negroni.HandlerFunc(b.LoginRequired),
+			negroni.HandlerFunc(auth.LoginRequired(b.MustLogin)),
 			negroni.Wrap(loginRouter),
 		),
 	)
-
-	adminRouter := mux.NewRouter().PathPrefix("/admin").Subrouter().StrictSlash(false)
-	r.HandleFunc("/admin", b.AdminHandler) // so as to not be "/admin/"
-	adminRouter.HandleFunc("/settings", b.SettingsHandler)
-	adminRouter.PathPrefix("/").HandlerFunc(b.PageHandler)
-	r.PathPrefix("/admin").Handler(negroni.New(
-		negroni.HandlerFunc(b.LoginRequired),
-		negroni.Wrap(adminRouter),
-	))
 }
 
 // RSSHandler renders an RSS feed from the blog.
@@ -214,7 +206,7 @@ func (b *Blog) RecentPosts(r *http.Request, tag, privacy string) []posts.Post {
 			}
 		} else {
 			// Exclude certain posts in generic index views.
-			if (post.Privacy == PRIVATE || post.Privacy == UNLISTED) && !b.LoggedIn(r) {
+			if (post.Privacy == PRIVATE || post.Privacy == UNLISTED) && !auth.LoggedIn(r) {
 				continue
 			} else if post.Privacy == DRAFT {
 				continue
@@ -370,7 +362,7 @@ func (b *Blog) BlogArchive(w http.ResponseWriter, r *http.Request) {
 	byMonth := map[string]*Archive{}
 	for _, post := range idx.Posts {
 		// Exclude certain posts
-		if (post.Privacy == PRIVATE || post.Privacy == UNLISTED) && !b.LoggedIn(r) {
+		if (post.Privacy == PRIVATE || post.Privacy == UNLISTED) && !auth.LoggedIn(r) {
 			continue
 		} else if post.Privacy == DRAFT {
 			continue
@@ -416,8 +408,8 @@ func (b *Blog) viewPost(w http.ResponseWriter, r *http.Request, fragment string)
 
 	// Handle post privacy.
 	if post.Privacy == PRIVATE || post.Privacy == DRAFT {
-		if !b.LoggedIn(r) {
-			b.NotFound(w, r)
+		if !auth.LoggedIn(r) {
+			b.NotFound(w, r, "That post is not public.")
 			return nil
 		}
 	}
@@ -517,7 +509,7 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 			if err := post.Validate(); err != nil {
 				v.Error = err
 			} else {
-				author, _ := b.CurrentUser(r)
+				author, _ := auth.CurrentUser(r)
 				post.AuthorID = author.ID
 
 				post.Updated = time.Now().UTC()

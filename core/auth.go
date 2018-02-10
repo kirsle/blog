@@ -7,7 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/internal/forms"
 	"github.com/kirsle/blog/core/internal/log"
+	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/core/internal/sessions"
 )
 
 // AuthRoutes attaches the auth routes to the app.
@@ -17,9 +19,16 @@ func (b *Blog) AuthRoutes(r *mux.Router) {
 	r.HandleFunc("/account", b.AccountHandler)
 }
 
+// MustLogin handles errors from the LoginRequired middleware by redirecting
+// the user to the login page.
+func (b *Blog) MustLogin(w http.ResponseWriter, r *http.Request) {
+	log.Info("MustLogin for %s", r.URL.Path)
+	b.Redirect(w, "/login?next="+r.URL.Path)
+}
+
 // Login logs the browser in as the given user.
 func (b *Blog) Login(w http.ResponseWriter, r *http.Request, u *users.User) error {
-	session, err := b.store.Get(r, "session") // TODO session name
+	session, err := sessions.Store.Get(r, "session") // TODO session name
 	if err != nil {
 		return err
 	}
@@ -78,7 +87,7 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 // LogoutHandler logs the user out and redirects to the home page.
 func (b *Blog) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	session, _ := b.store.Get(r, "session")
+	session, _ := sessions.Store.Get(r, "session")
 	delete(session.Values, "logged-in")
 	delete(session.Values, "user-id")
 	session.Save(r, w)
@@ -87,11 +96,11 @@ func (b *Blog) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // AccountHandler shows the account settings page.
 func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
-	if !b.LoggedIn(r) {
+	if !auth.LoggedIn(r) {
 		b.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!")
 		return
 	}
-	currentUser, err := b.CurrentUser(r)
+	currentUser, err := auth.CurrentUser(r)
 	if err != nil {
 		b.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!!")
 		return
