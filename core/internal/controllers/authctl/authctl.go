@@ -1,4 +1,4 @@
-package core
+package authctl
 
 import (
 	"errors"
@@ -14,33 +14,14 @@ import (
 	"github.com/kirsle/blog/core/internal/sessions"
 )
 
-// AuthRoutes attaches the auth routes to the app.
-func (b *Blog) AuthRoutes(r *mux.Router) {
-	r.HandleFunc("/login", b.LoginHandler)
-	r.HandleFunc("/logout", b.LogoutHandler)
-	r.HandleFunc("/account", b.AccountHandler)
+// Register the initial setup routes.
+func Register(r *mux.Router) {
+	r.HandleFunc("/login", loginHandler)
+	r.HandleFunc("/logout", logoutHandler)
+	r.HandleFunc("/account", accountHandler)
 }
 
-// MustLogin handles errors from the LoginRequired middleware by redirecting
-// the user to the login page.
-func (b *Blog) MustLogin(w http.ResponseWriter, r *http.Request) {
-	responses.Redirect(w, "/login?next="+r.URL.Path)
-}
-
-// Login logs the browser in as the given user.
-func (b *Blog) Login(w http.ResponseWriter, r *http.Request, u *users.User) error {
-	session, err := sessions.Store.Get(r, "session") // TODO session name
-	if err != nil {
-		return err
-	}
-	session.Values["logged-in"] = true
-	session.Values["user-id"] = u.ID
-	session.Save(r, w)
-	return nil
-}
-
-// LoginHandler shows and handles the login page.
-func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
+func loginHandler(w http.ResponseWriter, r *http.Request) {
 	vars := map[string]interface{}{
 		"Form": forms.Setup{},
 	}
@@ -70,7 +51,7 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				// Login OK!
 				responses.Flash(w, r, "Login OK!")
-				b.Login(w, r, user)
+				auth.Login(w, r, user)
 
 				// A next URL given? TODO: actually get to work
 				log.Info("Redirect after login to: %s", nextURL)
@@ -87,8 +68,7 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "login", vars)
 }
 
-// LogoutHandler logs the user out and redirects to the home page.
-func (b *Blog) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := sessions.Store.Get(r, "session")
 	delete(session.Values, "logged-in")
 	delete(session.Values, "user-id")
@@ -96,8 +76,7 @@ func (b *Blog) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	responses.Redirect(w, "/")
 }
 
-// AccountHandler shows the account settings page.
-func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
+func accountHandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.LoggedIn(r) {
 		responses.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!")
 		return

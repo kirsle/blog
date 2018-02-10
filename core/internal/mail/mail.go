@@ -1,10 +1,10 @@
-package core
+package mail
 
 import (
 	"bytes"
-	"crypto/tls"
 	"fmt"
 	"html/template"
+	"net/mail"
 	"net/url"
 	"strings"
 
@@ -30,7 +30,7 @@ type Email struct {
 }
 
 // SendEmail sends an email.
-func (b *Blog) SendEmail(email Email) {
+func SendEmail(email Email) {
 	s, _ := settings.Load()
 	if !s.Mail.Enabled || s.Mail.Host == "" || s.Mail.Port == 0 || s.Mail.Sender == "" {
 		log.Info("Suppressing email: not completely configured")
@@ -83,11 +83,6 @@ func (b *Blog) SendEmail(email Email) {
 	m.AddAlternative("text/html", html.String())
 
 	d := gomail.NewDialer(s.Mail.Host, s.Mail.Port, s.Mail.Username, s.Mail.Password)
-	if b.Debug {
-		d.TLSConfig = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-	}
 
 	log.Info("SendEmail: %s (%s) to %s", email.Subject, email.Template, email.To)
 	if err := d.DialAndSend(m); err != nil {
@@ -96,7 +91,7 @@ func (b *Blog) SendEmail(email Email) {
 }
 
 // NotifyComment sends notification emails about comments.
-func (b *Blog) NotifyComment(c *comments.Comment) {
+func NotifyComment(c *comments.Comment) {
 	s, _ := settings.Load()
 	if s.Site.URL == "" {
 		log.Error("Can't send comment notification because the site URL is not configured")
@@ -126,7 +121,7 @@ func (b *Blog) NotifyComment(c *comments.Comment) {
 		email.To = config.Site.AdminEmail
 		email.Admin = true
 		log.Info("Mail site admin '%s' about comment notification on '%s'", email.To, c.ThreadID)
-		b.SendEmail(email)
+		SendEmail(email)
 	}
 
 	// Email the subscribers.
@@ -143,6 +138,11 @@ func (b *Blog) NotifyComment(c *comments.Comment) {
 			url.QueryEscape(to),
 		)
 		log.Info("Mail subscriber '%s' about comment notification on '%s'", email.To, c.ThreadID)
-		b.SendEmail(email)
+		SendEmail(email)
 	}
+}
+
+// ParseAddress parses an email address.
+func ParseAddress(addr string) (*mail.Address, error) {
+	return mail.ParseAddress(addr)
 }

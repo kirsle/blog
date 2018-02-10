@@ -1,4 +1,4 @@
-package core
+package contact
 
 import (
 	"fmt"
@@ -10,14 +10,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/mail"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/render"
 	"github.com/kirsle/blog/core/internal/responses"
 )
 
-// ContactRoutes attaches the contact URL to the app.
-func (b *Blog) ContactRoutes(r *mux.Router) {
+// Register attaches the contact URL to the app.
+func Register(r *mux.Router, onError func(http.ResponseWriter, *http.Request, string)) {
 	r.HandleFunc("/contact", func(w http.ResponseWriter, r *http.Request) {
 		form := &forms.Contact{}
 		v := map[string]interface{}{
@@ -27,13 +28,13 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 		// If there is no site admin, show an error.
 		cfg, err := settings.Load()
 		if err != nil {
-			b.Error(w, r, "Error loading site configuration!")
+			onError(w, r, "Error loading site configuration!")
 			return
 		} else if cfg.Site.AdminEmail == "" {
-			b.Error(w, r, "There is no admin email configured for this website!")
+			onError(w, r, "There is no admin email configured for this website!")
 			return
 		} else if !cfg.Mail.Enabled {
-			b.Error(w, r, "This website doesn't have an e-mail gateway configured.")
+			onError(w, r, "This website doesn't have an e-mail gateway configured.")
 			return
 		}
 
@@ -43,7 +44,7 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 			if err = form.Validate(); err != nil {
 				responses.Flash(w, r, err.Error())
 			} else {
-				go b.SendEmail(Email{
+				go mail.SendEmail(mail.Email{
 					To:       cfg.Site.AdminEmail,
 					Admin:    true,
 					ReplyTo:  form.Email,
@@ -57,7 +58,7 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 				})
 
 				// Log it to disk, too.
-				fh, err := os.OpenFile(filepath.Join(b.UserRoot, ".contact.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+				fh, err := os.OpenFile(filepath.Join(*render.UserRoot, ".contact.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 				if err != nil {
 					responses.Flash(w, r, "Error logging the message to disk: %s", err)
 				} else {

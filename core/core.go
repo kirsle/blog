@@ -7,6 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/kirsle/blog/core/internal/controllers/admin"
+	"github.com/kirsle/blog/core/internal/controllers/authctl"
+	"github.com/kirsle/blog/core/internal/controllers/contact"
+	"github.com/kirsle/blog/core/internal/controllers/setup"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/middleware"
@@ -16,6 +20,7 @@ import (
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/responses"
 	"github.com/kirsle/blog/core/internal/sessions"
 	"github.com/kirsle/blog/jsondb"
 	"github.com/kirsle/blog/jsondb/caches"
@@ -105,10 +110,10 @@ func (b *Blog) Configure() {
 func (b *Blog) SetupHTTP() {
 	// Initialize the router.
 	r := mux.NewRouter()
-	r.HandleFunc("/initial-setup", b.SetupHandler)
-	b.AuthRoutes(r)
-	b.AdminRoutes(r)
-	b.ContactRoutes(r)
+	setup.Register(r)
+	authctl.Register(r)
+	admin.Register(r, b.MustLogin)
+	contact.Register(r, b.Error)
 	b.BlogRoutes(r)
 	b.CommentRoutes(r)
 
@@ -136,4 +141,10 @@ func (b *Blog) SetupHTTP() {
 func (b *Blog) ListenAndServe(address string) {
 	log.Info("Listening on %s", address)
 	http.ListenAndServe(address, b.n)
+}
+
+// MustLogin handles errors from the LoginRequired middleware by redirecting
+// the user to the login page.
+func (b *Blog) MustLogin(w http.ResponseWriter, r *http.Request) {
+	responses.Redirect(w, "/login?next="+r.URL.Path)
 }

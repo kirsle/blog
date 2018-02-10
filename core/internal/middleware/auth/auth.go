@@ -26,6 +26,18 @@ func CurrentUser(r *http.Request) (*users.User, error) {
 	}, errors.New("not authenticated")
 }
 
+// Login logs the browser in as the given user.
+func Login(w http.ResponseWriter, r *http.Request, u *users.User) error {
+	session, err := sessions.Store.Get(r, "session") // TODO session name
+	if err != nil {
+		return err
+	}
+	session.Values["logged-in"] = true
+	session.Values["user-id"] = u.ID
+	session.Save(r, w)
+	return nil
+}
+
 // LoggedIn returns whether the current user is logged in to an account.
 func LoggedIn(r *http.Request) bool {
 	session := sessions.Get(r)

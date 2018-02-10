@@ -2,15 +2,14 @@ package core
 
 import (
 	"bytes"
-	"errors"
 	"html/template"
 	"net/http"
-	"net/mail"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/internal/log"
+	"github.com/kirsle/blog/core/internal/mail"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/comments"
@@ -236,7 +235,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 				responses.FlashAndRedirect(w, r, c.OriginURL, "Error posting comment: %s", err)
 				return
 			}
-			b.NotifyComment(c)
+			mail.NotifyComment(c)
 
 			// Are they subscribing to future comments?
 			if c.Subscribe && len(c.Email) > 0 {
@@ -266,14 +265,13 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 
 // SubscriptionHandler to opt out of subscriptions.
 func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
-	var err error
 	// POST to unsubscribe from all threads.
 	if r.Method == http.MethodPost {
 		email := r.FormValue("email")
 		if email == "" {
-			err = errors.New("email address is required to unsubscribe from comment threads")
+			b.BadRequest(w, r, "email address is required to unsubscribe from comment threads")
 		} else if _, err := mail.ParseAddress(email); err != nil {
-			err = errors.New("invalid email address")
+			b.BadRequest(w, r, "invalid email address")
 		}
 
 		m := comments.LoadMailingList()
@@ -294,9 +292,7 @@ func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Template(w, r, "comments/subscription.gohtml", map[string]error{
-		"Error": err,
-	})
+	render.Template(w, r, "comments/subscription.gohtml", nil)
 }
 
 // QuickDeleteHandler allows the admin to quickly delete spam without logging in.
