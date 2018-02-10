@@ -469,7 +469,7 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 	var post *posts.Post
 
 	// Are we editing an existing post?
-	if idStr := r.URL.Query().Get("id"); idStr != "" {
+	if idStr := r.FormValue("id"); idStr != "" {
 		id, err := strconv.Atoi(idStr)
 		if err == nil {
 			post, err = posts.Load(id)
@@ -500,6 +500,8 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 			} else {
 				author, _ := b.CurrentUser(r)
 				post.AuthorID = author.ID
+
+				post.Updated = time.Now().UTC()
 				err = post.Save()
 				if err != nil {
 					v.Error = err
