@@ -10,6 +10,7 @@ import (
 	"github.com/kirsle/blog/core/internal/forms"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/core/internal/render"
 )
 
 // Vars is an interface to implement by the templates to pass their own custom
@@ -41,20 +42,20 @@ type Vars struct {
 
 // NewVars initializes a Vars struct with the custom Data map initialized.
 // You may pass in an initial value for this map if you want.
-func NewVars(data ...map[interface{}]interface{}) *Vars {
+func NewVars(data ...map[interface{}]interface{}) render.Vars {
 	var value map[interface{}]interface{}
 	if len(data) > 0 {
 		value = data[0]
 	} else {
 		value = make(map[interface{}]interface{})
 	}
-	return &Vars{
+	return render.Vars{
 		Data: value,
 	}
 }
 
 // LoadDefaults combines template variables with default, globally available vars.
-func (v *Vars) LoadDefaults(b *Blog, r *http.Request) {
+func (b *Blog) LoadDefaults(v render.Vars, r *http.Request) render.Vars {
 	// Get the site settings.
 	s, err := settings.Load()
 	if err != nil {
@@ -72,12 +73,9 @@ func (v *Vars) LoadDefaults(b *Blog, r *http.Request) {
 	user, err := b.CurrentUser(r)
 	v.CurrentUser = user
 	v.LoggedIn = err == nil
-}
 
-// // TemplateVars is an interface that describes the template variable struct.
-// type TemplateVars interface {
-// 	LoadDefaults(*Blog, *http.Request)
-// }
+	return v
+}
 
 // RenderPartialTemplate handles rendering a Go template to a writer, without
 // doing anything extra to the vars or dealing with net/http. This is ideal for
@@ -86,78 +84,14 @@ func (v *Vars) LoadDefaults(b *Blog, r *http.Request) {
 // This will wrap the template in `.layout.gohtml` by default. To render just
 // a bare template on its own, i.e. for partial templates, create a Vars struct
 // with `Vars{NoIndex: true}`
-func (b *Blog) RenderPartialTemplate(w io.Writer, path string, v interface{}, withLayout bool, functions map[string]interface{}) error {
-	var (
-		layout       Filepath
-		templateName string
-		err          error
-	)
-
-	// Find the file path to the template.
-	filepath, err := b.ResolvePath(path)
-	if err != nil {
-		log.Error("RenderTemplate(%s): file not found", path)
-		return err
-	}
-
-	// Get the layout template.
-	if withLayout {
-		templateName = "layout"
-		layout, err = b.ResolvePath(".layout")
-		if err != nil {
-			log.Error("RenderTemplate(%s): layout template not found", path)
-			return err
-		}
-	} else {
-		templateName = filepath.Basename
-	}
-
-	// The comment entry partial.
-	commentEntry, err := b.ResolvePath("comments/entry.partial")
-	if err != nil {
-		log.Error("RenderTemplate(%s): comments/entry.partial not found")
-		return err
-	}
-
-	// Template functions.
-	funcmap := template.FuncMap{
-		"StringsJoin": strings.Join,
-		"Now":         time.Now,
-		"RenderIndex": b.RenderIndex,
-		"RenderPost":  b.RenderPost,
-		"RenderTags":  b.RenderTags,
-		"TemplateName": func() string {
-			return filepath.URI
-		},
-	}
-	if functions != nil {
-		for name, fn := range functions {
-			funcmap[name] = fn
-		}
-	}
-
-	// Useful template functions.
-	t := template.New(filepath.Absolute).Funcs(funcmap)
-
-	// Parse the template files. The layout comes first because it's the wrapper
-	// and allows the filepath template to set the page title.
-	var templates []string
-	if withLayout {
-		templates = append(templates, layout.Absolute)
-	}
-	t, err = t.ParseFiles(append(templates, commentEntry.Absolute, filepath.Absolute)...)
-	if err != nil {
-		log.Error(err.Error())
-		return err
-	}
-
-	err = t.ExecuteTemplate(w, templateName, v)
-	if err != nil {
-		log.Error("Template parsing error: %s", err)
-		return err
-	}
-
-	return nil
+func (b *Blog) RenderPartialTemplate(w io.Writer, r *http.Request, path string, v render.Vars, withLayout bool, functions map[string]interface{}) error {
+	v = b.LoadDefaults(v, r)
+	return render.PartialTemplate(w, path, render.Config{
+		Request:    r,
+		Vars:       &v,
+		WithLayout: withLayout,
+		Functions:  b.TemplateFuncs(nil, nil, functions),
+	})
 }
 
 // RenderTemplate responds with an HTML template.
@@ -166,12 +100,13 @@ func (b *Blog) RenderPartialTemplate(w io.Writer, path string, v interface{}, wi
 // website title and user login status), the user's session may be updated with
 // new CSRF token, and other such things. If you just want to render a template
 // without all that nonsense, use RenderPartialTemplate.
-func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path string, vars *Vars) error {
-	// Inject globally available variables.
-	if vars == nil {
-		vars = &Vars{}
+func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path string, vars render.Vars) error {
+	if r == nil {
+		panic("core.RenderTemplate(): the *http.Request is nil!?")
 	}
-	vars.LoadDefaults(b, r)
+
+	// Inject globally available variables.
+	vars = b.LoadDefaults(vars, r)
 
 	// Add any flashed messages from the endpoint controllers.
 	session := b.Session(r)
@@ -187,14 +122,34 @@ func (b *Blog) RenderTemplate(w http.ResponseWriter, r *http.Request, path strin
 	vars.CSRF = b.GenerateCSRFToken(w, r, session)
 	vars.Editable = !strings.HasPrefix(path, "admin/")
 
-	w.Header().Set("Content-Type", "text/html; encoding=UTF-8")
-	b.RenderPartialTemplate(w, path, vars, true, template.FuncMap{
+	return render.Template(w, path, render.Config{
+		Request:   r,
+		Vars:      &vars,
+		Functions: b.TemplateFuncs(w, r, nil),
+	})
+}
+
+// TemplateFuncs returns the common template function map.
+func (b *Blog) TemplateFuncs(w http.ResponseWriter, r *http.Request, inject map[string]interface{}) map[string]interface{} {
+	fn := map[string]interface{}{
+		"RenderIndex": b.RenderIndex,
+		"RenderPost":  b.RenderPost,
+		"RenderTags":  b.RenderTags,
 		"RenderComments": func(subject string, ids ...string) template.HTML {
+			if w == nil || r == nil {
+				return template.HTML("[RenderComments Error: need both http.ResponseWriter and http.Request]")
+			}
+
 			session := b.Session(r)
 			csrf := b.GenerateCSRFToken(w, r, session)
 			return b.RenderComments(session, csrf, r.URL.Path, subject, ids...)
 		},
-	})
+	}
 
-	return nil
+	if inject != nil {
+		for k, v := range inject {
+			fn[k] = v
+		}
+	}
+	return fn
 }

@@ -51,5 +51,5 @@ func main() {
 		jsondb.SetDebug(true)
 	}
 
-	app.ListenAndServe(fAddress)
+	app.Run(fAddress)
 }

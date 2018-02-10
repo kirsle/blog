@@ -11,9 +11,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/core/internal/render"
 )
 
 // CommentRoutes attaches the comment routes to the app.
@@ -91,14 +93,14 @@ func (b *Blog) RenderComments(session *sessions.Session, csrfToken, url, subject
 	}
 
 	// Get the template snippet.
-	filepath, err := b.ResolvePath("comments/comments.partial")
+	filepath, err := render.ResolvePath("comments/comments.partial")
 	if err != nil {
 		log.Error(err.Error())
 		return template.HTML("[error: missing comments/comments.partial]")
 	}
 
 	// And the comment view partial.
-	entryPartial, err := b.ResolvePath("comments/entry.partial")
+	entryPartial, err := render.ResolvePath("comments/entry.partial")
 	if err != nil {
 		log.Error(err.Error())
 		return template.HTML("[error: missing comments/entry.partial]")

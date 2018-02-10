@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,10 +10,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/kirsle/blog/jsondb/caches/null"
-	"github.com/kirsle/blog/jsondb/caches/redis"
 	"github.com/kirsle/blog/core/internal/forms"
 	"github.com/kirsle/blog/core/internal/models/settings"
+	"github.com/kirsle/blog/core/internal/render"
 	"github.com/urfave/negroni"
 )
 
@@ -33,13 +31,13 @@ func (b *Blog) AdminRoutes(r *mux.Router) {
 
 // AdminHandler is the admin landing page.
 func (b *Blog) AdminHandler(w http.ResponseWriter, r *http.Request) {
-	b.RenderTemplate(w, r, "admin/index", nil)
+	b.RenderTemplate(w, r, "admin/index", render.Vars{})
 }
 
 // FileTree holds information about files in the document roots.
 type FileTree struct {
 	UserRoot bool // false = CoreRoot
-	Files    []Filepath
+	Files    []render.Filepath
 }
 
 // EditorHandler lets you edit web pages from the frontend.
@@ -127,7 +125,7 @@ func (b *Blog) editorFileList(w http.ResponseWriter, r *http.Request) {
 	for i, root := range []string{b.UserRoot, b.DocumentRoot} {
 		tree := FileTree{
 			UserRoot: i == 0,
-			Files:    []Filepath{},
+			Files:    []render.Filepath{},
 		}
 
 		filepath.Walk(root, func(path string, f os.FileInfo, err error) error {
@@ -155,7 +153,7 @@ func (b *Blog) editorFileList(w http.ResponseWriter, r *http.Request) {
 				return nil
 			}
 
-			tree.Files = append(tree.Files, Filepath{
+			tree.Files = append(tree.Files, render.Filepath{
 				Absolute: abs,
 				Relative: rel,
 				Basename: filepath.Base(path),
@@ -224,24 +222,7 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// Save the settings.
 			settings.Save()
-
-			// Reset Redis configuration.
-			if settings.Redis.Enabled {
-				cache, err := redis.New(
-					fmt.Sprintf("%s:%d", settings.Redis.Host, settings.Redis.Port),
-					settings.Redis.DB,
-					settings.Redis.Prefix,
-				)
-				if err != nil {
-					b.Flash(w, r, "Error connecting to Redis: %s", err)
-					b.Cache = null.New()
-				} else {
-					b.Cache = cache
-				}
-			} else {
-				b.Cache = null.New()
-			}
-			b.DB.Cache = b.Cache
+			b.Configure()
 
 			b.FlashAndReload(w, r, "Settings have been saved!")
 			return

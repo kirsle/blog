@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/jsondb/caches"
-	"github.com/kirsle/golog"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/shurcooL/github_flavored_markdown"
 )
@@ -34,12 +34,6 @@ var (
 	reCodeBlock   = regexp.MustCompile(`<div class="highlight highlight-(.+?)"><pre>(.+?)</pre></div>`)
 	reDecodeBlock = regexp.MustCompile(`\[?FENCED_CODE_%d_BLOCK?\]`)
 )
-
-var log *golog.Logger
-
-func init() {
-	log = golog.GetLogger("blog")
-}
 
 // A container for parsed code blocks.
 type codeBlock struct {
@@ -100,7 +94,10 @@ func RenderTrustedMarkdown(input string) string {
 
 	// Substitute fenced codes back in.
 	for _, block := range codeBlocks {
-		highlighted, _ := Pygmentize(block.language, block.source)
+		highlighted, err := Pygmentize(block.language, block.source)
+		if err != nil {
+			log.Error("Pygmentize error: %s", err)
+		}
 		html = strings.Replace(html,
 			fmt.Sprintf("[?FENCED_CODE_%d_BLOCK?]", block.placeholder),
 			highlighted,
@@ -127,11 +124,10 @@ func Pygmentize(language, source string) (string, error) {
 	hash := fmt.Sprintf("%x", h.Sum(nil))
 	cacheKey := "pygmentize:" + hash
 
-	_ = cacheKey
 	// Do we have it cached?
-	// if cached, err := b.Cache.Get(cacheKey); err == nil && len(cached) > 0 {
-	// 	return string(cached), nil
-	// }
+	if cached, err := Cache.Get(cacheKey); err == nil && len(cached) > 0 {
+		return string(cached), nil
+	}
 
 	// Defer to the `pygmentize` command
 	bin := "pygmentize"
@@ -154,10 +150,10 @@ func Pygmentize(language, source string) (string, error) {
 	}
 
 	result = out.String()
-	// err := b.Cache.Set(cacheKey, []byte(result), 60*60*24) // cool md5's don't change
-	// if err != nil {
-	// 	log.Error("Couldn't cache Pygmentize output: %s", err)
-	// }
+	err := Cache.Set(cacheKey, []byte(result), 60*60*24) // cool md5's don't change
+	if err != nil {
+		log.Error("Couldn't cache Pygmentize output: %s", err)
+	}
 
 	return result, nil
 }

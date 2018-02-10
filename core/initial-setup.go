@@ -5,13 +5,15 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/core/internal/render"
 )
 
 // SetupHandler is the initial blog setup route.
 func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
-	vars := &Vars{
+	vars := render.Vars{
 		Form: forms.Setup{},
 	}
 

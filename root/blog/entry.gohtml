@@ -2,7 +2,7 @@
 {{ define "content" }}
 
 {{ $p := .Data.Post }}
-{{ RenderPost $p false 0 }}
+{{ RenderPost .Request $p false 0 }}
 
 {{ if and .LoggedIn .CurrentUser.Admin }}
     <small>

@@ -1,7 +1,8 @@
-{{ $a := .Author }}
-{{ $p := .Post }}
+{{ $a := .Data.Author }}
+{{ $p := .Data.Post }}
+{{ $d := .Data }}
 
-{{ if .IndexView }}
+{{ if $d.IndexView }}
     <a class="h1 blog-title" href="/{{ $p.Fragment }}">{{ $p.Title }}</a>
 {{ else }}
     <h1 class="blog-title">{{ $p.Title }}</h1>
@@ -27,9 +28,9 @@
 </div>
 
 <div class="markdown mb-4">
-    {{ .Rendered }}
+    {{ $d.Rendered }}
 
-    {{ if .Snipped }}
+    {{ if $d.Snipped }}
     <p>
         <a href="/{{ $p.Fragment }}#snip">Read more...</a>
     </p>
@@ -45,9 +46,9 @@
     </ul>
 {{ end }}
 
-{{ if .IndexView }}
+{{ if $d.IndexView }}
     <em class="text-muted">
-        <a href="/{{ $p.Fragment }}#comments">{{ .NumComments }} comment{{ if ne .NumComments 1 }}s{{ end }}</a>
+        <a href="/{{ $p.Fragment }}#comments">{{ $d.NumComments }} comment{{ if ne $d.NumComments 1 }}s{{ end }}</a>
         |
         <a href="/{{ $p.Fragment }}">Permalink</a>
     </em>

@@ -8,9 +8,11 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/settings"
+	"github.com/kirsle/blog/core/internal/render"
 	"github.com/microcosm-cc/bluemonday"
 	gomail "gopkg.in/gomail.v2"
 )
@@ -36,7 +38,7 @@ func (b *Blog) SendEmail(email Email) {
 	}
 
 	// Resolve the template.
-	tmpl, err := b.ResolvePath(email.Template)
+	tmpl, err := render.ResolvePath(email.Template)
 	if err != nil {
 		log.Error("SendEmail: %s", err.Error())
 		return

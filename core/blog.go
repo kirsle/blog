@@ -13,11 +13,13 @@ import (
 
 	"github.com/gorilla/feeds"
 	"github.com/gorilla/mux"
+	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/posts"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/core/internal/render"
 	"github.com/urfave/negroni"
 )
 
@@ -306,12 +308,20 @@ func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 
 	// Render the blog index partial.
 	var output bytes.Buffer
-	v := map[string]interface{}{
-		"PreviousPage": previousPage,
-		"NextPage":     nextPage,
-		"View":         view,
+	v := render.Vars{
+		Data: map[interface{}]interface{}{
+			"PreviousPage": previousPage,
+			"NextPage":     nextPage,
+			"View":         view,
+		},
 	}
-	b.RenderPartialTemplate(&output, "blog/index.partial", v, false, nil)
+	v = b.LoadDefaults(v, r)
+	render.PartialTemplate(&output, "blog/index.partial", render.Config{
+		Request:    r,
+		Vars:       &v,
+		WithLayout: false,
+		Functions:  b.TemplateFuncs(nil, r, nil),
+	})
 
 	return template.HTML(output.String())
 }
@@ -329,14 +339,20 @@ func (b *Blog) RenderTags(r *http.Request, indexView bool) template.HTML {
 	}
 
 	var output bytes.Buffer
-	v := struct {
-		IndexView bool
-		Tags      []posts.Tag
-	}{
-		IndexView: indexView,
-		Tags:      tags,
+	v := render.Vars{
+		Data: map[interface{}]interface{}{
+			"IndexView": indexView,
+			"Tags":      tags,
+		},
 	}
-	b.RenderPartialTemplate(&output, "blog/tags.partial", v, false, nil)
+	v = b.LoadDefaults(v, r)
+	render.PartialTemplate(&output, "blog/tags.partial", render.Config{
+		Request:    r,
+		Vars:       &v,
+		WithLayout: false,
+		Functions:  b.TemplateFuncs(nil, nil, nil),
+	})
+	// b.RenderPartialTemplate(&output, r, "blog/tags.partial", v, false, nil)
 
 	return template.HTML(output.String())
 }
@@ -417,7 +433,7 @@ func (b *Blog) viewPost(w http.ResponseWriter, r *http.Request, fragment string)
 // RenderPost renders a blog post as a partial template and returns the HTML.
 // If indexView is true, the blog headers will be hyperlinked to the dedicated
 // entry view page.
-func (b *Blog) RenderPost(p *posts.Post, indexView bool, numComments int) template.HTML {
+func (b *Blog) RenderPost(r *http.Request, p *posts.Post, indexView bool, numComments int) template.HTML {
 	// Look up the author's information.
 	author, err := users.LoadReadonly(p.AuthorID)
 	if err != nil {
@@ -445,16 +461,18 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool, numComments int) templa
 		rendered = template.HTML(p.Body)
 	}
 
-	meta := PostMeta{
-		Post:        p,
-		Rendered:    rendered,
-		Author:      author,
-		IndexView:   indexView,
-		Snipped:     snipped,
-		NumComments: numComments,
+	meta := render.Vars{
+		Data: map[interface{}]interface{}{
+			"Post":        p,
+			"Rendered":    rendered,
+			"Author":      author,
+			"IndexView":   indexView,
+			"Snipped":     snipped,
+			"NumComments": numComments,
+		},
 	}
 	output := bytes.Buffer{}
-	err = b.RenderPartialTemplate(&output, "blog/entry.partial", meta, false, nil)
+	err = b.RenderPartialTemplate(&output, r, "blog/entry.partial", meta, false, nil)
 	if err != nil {
 		return template.HTML(fmt.Sprintf("[template error in blog/entry.partial: %s]", err.Error()))
 	}

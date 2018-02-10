@@ -1,18 +1,23 @@
+{{ $PreviousPage := .Data.PreviousPage }}
+{{ $NextPage := .Data.NextPage }}
+{{ $View := .Data.View }}
 <div class="row">
     <div class="col text-right">
         <ul class="list-inline">
-        {{ if .PreviousPage }}
-            <li class="list-inline-item"><a href="?page={{ .PreviousPage }}">Earlier</a></li>
+        {{ if $PreviousPage }}
+            <li class="list-inline-item"><a href="?page={{ $PreviousPage }}">Earlier</a></li>
         {{ end }}
-        {{ if .NextPage }}
-            <li class="list-inline-item"><a href="?page={{ .NextPage }}">Older</a></li>
+        {{ if $NextPage }}
+            <li class="list-inline-item"><a href="?page={{ $NextPage }}">Older</a></li>
         {{ end }}
     </div>
 </div>
 
-{{ range .View }}
+{{ $r := .Request }}
+
+{{ range $View }}
     {{ $p := .Post }}
-    {{ RenderPost $p true .NumComments }}
+    {{ RenderPost $r $p true .NumComments }}
 
     {{ if and $.LoggedIn $.CurrentUser.Admin }}
     <div class="mb-4">
@@ -31,11 +36,11 @@
 <div class="row">
     <div class="col text-right">
         <ul class="list-inline">
-        {{ if .PreviousPage }}
-            <li class="list-inline-item"><a href="?page={{ .PreviousPage }}">Earlier</a></li>
+        {{ if $PreviousPage }}
+            <li class="list-inline-item"><a href="?page={{ $PreviousPage }}">Earlier</a></li>
         {{ end }}
-        {{ if .NextPage }}
-            <li class="list-inline-item"><a href="?page={{ .NextPage }}">Older</a></li>
+        {{ if $NextPage }}
+            <li class="list-inline-item"><a href="?page={{ $NextPage }}">Older</a></li>
         {{ end }}
     </div>
 </div>

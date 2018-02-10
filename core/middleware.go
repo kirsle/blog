@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
+	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/models/users"
 )
 
@@ -38,6 +39,10 @@ func (b *Blog) SessionLoader(w http.ResponseWriter, r *http.Request, next http.H
 
 // Session returns the current request's session.
 func (b *Blog) Session(r *http.Request) *sessions.Session {
+	if r == nil {
+		panic("Session(*http.Request) with a nil argument!?")
+	}
+
 	ctx := r.Context()
 	if session, ok := ctx.Value(sessionKey).(*sessions.Session); ok {
 		return session
