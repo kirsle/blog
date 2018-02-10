@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/kirsle/blog/core/models/comments"
-	"github.com/kirsle/blog/core/models/settings"
+	"github.com/kirsle/blog/core/internal/models/comments"
+	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/microcosm-cc/bluemonday"
 	gomail "gopkg.in/gomail.v2"
 )

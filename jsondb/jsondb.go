@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kirsle/blog/core/caches"
+	"github.com/kirsle/blog/jsondb/caches"
 )
 
 var (

@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/kirsle/blog/core/models/comments"
-	"github.com/kirsle/blog/core/models/users"
+	"github.com/kirsle/blog/core/internal/models/comments"
+	"github.com/kirsle/blog/core/internal/models/users"
 )
 
 // CommentRoutes attaches the comment routes to the app.

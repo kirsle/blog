@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/jsondb"
 	"github.com/kirsle/golog"
 )
 

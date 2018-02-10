@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/kirsle/blog/core/forms"
-	"github.com/kirsle/blog/core/models/users"
+	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/models/users"
 )
 
 // AuthRoutes attaches the auth routes to the app.

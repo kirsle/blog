@@ -11,10 +11,10 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/kirsle/blog/core/caches/null"
-	"github.com/kirsle/blog/core/caches/redis"
-	"github.com/kirsle/blog/core/forms"
-	"github.com/kirsle/blog/core/models/settings"
+	"github.com/kirsle/blog/jsondb/caches/null"
+	"github.com/kirsle/blog/jsondb/caches/redis"
+	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/urfave/negroni"
 )
 

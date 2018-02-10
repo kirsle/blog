@@ -13,10 +13,10 @@ import (
 
 	"github.com/gorilla/feeds"
 	"github.com/gorilla/mux"
-	"github.com/kirsle/blog/core/models/comments"
-	"github.com/kirsle/blog/core/models/posts"
-	"github.com/kirsle/blog/core/models/settings"
-	"github.com/kirsle/blog/core/models/users"
+	"github.com/kirsle/blog/core/internal/models/comments"
+	"github.com/kirsle/blog/core/internal/models/posts"
+	"github.com/kirsle/blog/core/internal/models/settings"
+	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/urfave/negroni"
 )
 

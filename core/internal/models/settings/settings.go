@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 
-	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/jsondb"
 )
 
 // DB is a reference to the parent app's JsonDB object.

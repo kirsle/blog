@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
-	"github.com/kirsle/blog/core/models/users"
+	"github.com/kirsle/blog/core/internal/models/users"
 )
 
 type key int

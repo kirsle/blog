@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/kirsle/blog/core/forms"
-	"github.com/kirsle/blog/core/models/settings"
+	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/models/settings"
 )
 
 // ContactRoutes attaches the contact URL to the app.

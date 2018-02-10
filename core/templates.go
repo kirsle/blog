@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kirsle/blog/core/forms"
-	"github.com/kirsle/blog/core/models/settings"
-	"github.com/kirsle/blog/core/models/users"
+	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/models/settings"
+	"github.com/kirsle/blog/core/internal/models/users"
 )
 
 // Vars is an interface to implement by the templates to pass their own custom

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/jsondb"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/sessions"
-	"github.com/kirsle/blog/core/forms"
-	"github.com/kirsle/blog/core/models/settings"
-	"github.com/kirsle/blog/core/models/users"
+	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/models/settings"
+	"github.com/kirsle/blog/core/internal/models/users"
 )
 
 // SetupHandler is the initial blog setup route.

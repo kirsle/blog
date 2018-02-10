@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/kirsle/blog/core"
-	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/jsondb"
 )
 
 // Build-time config constants.
