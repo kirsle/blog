@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	gorilla "github.com/gorilla/sessions"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/middleware/auth"
@@ -23,6 +22,8 @@ import (
 
 // CommentRoutes attaches the comment routes to the app.
 func (b *Blog) CommentRoutes(r *mux.Router) {
+	render.Funcs["RenderComments"] = b.RenderComments
+
 	r.HandleFunc("/comments", b.CommentHandler)
 	r.HandleFunc("/comments/subscription", b.SubscriptionHandler)
 	r.HandleFunc("/comments/quick-delete", b.QuickDeleteHandler)
@@ -40,13 +41,16 @@ type CommentMeta struct {
 }
 
 // RenderComments renders a comment form partial and returns the HTML.
-func (b *Blog) RenderComments(session *gorilla.Session, csrfToken, url, subject string, ids ...string) template.HTML {
+func (b *Blog) RenderComments(r *http.Request, subject string, ids ...string) template.HTML {
 	id := strings.Join(ids, "-")
+	session := sessions.Get(r)
+	url := r.URL.Path
 
 	// Load their cached name and email if they posted a comment before.
 	name, _ := session.Values["c.name"].(string)
 	email, _ := session.Values["c.email"].(string)
 	editToken, _ := session.Values["c.token"].(string)
+	csrf, _ := session.Values["csrf"].(string)
 
 	// Check if the user is a logged-in admin, to make all comments editable.
 	var isAdmin bool
@@ -71,7 +75,7 @@ func (b *Blog) RenderComments(session *gorilla.Session, csrfToken, url, subject 
 		c.HTML = template.HTML(markdown.RenderMarkdown(c.Body))
 		c.ThreadID = thread.ID
 		c.OriginURL = url
-		c.CSRF = csrfToken
+		c.CSRF = csrf
 
 		// Look up the author username.
 		if c.UserID > 0 {
@@ -120,7 +124,7 @@ func (b *Blog) RenderComments(session *gorilla.Session, csrfToken, url, subject 
 		ID:        thread.ID,
 		OriginURL: url,
 		Subject:   subject,
-		CSRF:      csrfToken,
+		CSRF:      csrf,
 		Thread:    &thread,
 		NewComment: comments.Comment{
 			Name:            name,

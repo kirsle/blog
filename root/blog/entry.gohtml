@@ -18,7 +18,7 @@
     <h2 id="comments" class="mt-4">Comments</h2>
 
     {{ $idStr := printf "%d" $p.ID}}
-    {{ RenderComments $p.Title "post" $idStr }}
+    {{ RenderComments .Request $p.Title "post" $idStr }}
 {{ else }}
     <hr>
     <em>Comments are disabled on this post.</em>

@@ -33,7 +33,7 @@ func (b *Blog) AdminRoutes(r *mux.Router) {
 
 // AdminHandler is the admin landing page.
 func (b *Blog) AdminHandler(w http.ResponseWriter, r *http.Request) {
-	b.RenderTemplate(w, r, "admin/index", render.Vars{})
+	render.Template(w, r, "admin/index", NewVars())
 }
 
 // FileTree holds information about files in the document roots.

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/sessions"
 	"github.com/kirsle/blog/core/internal/types"
@@ -46,8 +45,6 @@ func LoginRequired(onError http.HandlerFunc) negroni.HandlerFunc {
 				return
 			}
 		}
-
-		log.Info("Redirect away!")
 		onError(w, r)
 	}
 

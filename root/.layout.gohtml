@@ -81,7 +81,7 @@
 
             {{ if and .CurrentUser.Admin .Editable }}
                 <p class="mt-4">
-                    <strong>Admin:</strong> [<a href="/admin/editor?file={{ or .Data.MarkdownFile TemplateName }}">edit this page</a>]
+                    <strong>Admin:</strong> [<a href="/admin/editor?file={{ or .Data.MarkdownFile .Path }}">edit this page</a>]
                 </p>
             {{ end }}
         </div>

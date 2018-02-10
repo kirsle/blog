@@ -41,7 +41,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Is it a template file?
 	if strings.HasSuffix(filepath.URI, ".gohtml") {
-		b.RenderTemplate(w, r, filepath.URI, render.Vars{})
+		b.RenderTemplate(w, r, filepath.URI, NewVars())
 		return
 	}
 

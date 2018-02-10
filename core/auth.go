@@ -23,7 +23,6 @@ func (b *Blog) AuthRoutes(r *mux.Router) {
 // MustLogin handles errors from the LoginRequired middleware by redirecting
 // the user to the login page.
 func (b *Blog) MustLogin(w http.ResponseWriter, r *http.Request) {
-	log.Info("MustLogin for %s", r.URL.Path)
 	responses.Redirect(w, "/login?next="+r.URL.Path)
 }
 

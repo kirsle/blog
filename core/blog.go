@@ -44,6 +44,10 @@ type Archive struct {
 
 // BlogRoutes attaches the blog routes to the app.
 func (b *Blog) BlogRoutes(r *mux.Router) {
+	render.Funcs["RenderIndex"] = b.RenderIndex
+	render.Funcs["RenderPost"] = b.RenderPost
+	render.Funcs["RenderTags"] = b.RenderTags
+
 	// Public routes
 	r.HandleFunc("/blog", b.IndexHandler)
 	r.HandleFunc("/blog.rss", b.RSSHandler)
@@ -302,19 +306,14 @@ func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 	// Render the blog index partial.
 	var output bytes.Buffer
 	v := render.Vars{
+		NoLayout: true,
 		Data: map[interface{}]interface{}{
 			"PreviousPage": previousPage,
 			"NextPage":     nextPage,
 			"View":         view,
 		},
 	}
-	v = b.LoadDefaults(v, r)
-	render.PartialTemplate(&output, "blog/index.partial", render.Config{
-		Request:    r,
-		Vars:       &v,
-		WithLayout: false,
-		Functions:  b.TemplateFuncs(nil, r, nil),
-	})
+	b.RenderTemplate(&output, r, "blog/index.partial", v)
 
 	return template.HTML(output.String())
 }
@@ -333,19 +332,13 @@ func (b *Blog) RenderTags(r *http.Request, indexView bool) template.HTML {
 
 	var output bytes.Buffer
 	v := render.Vars{
+		NoLayout: true,
 		Data: map[interface{}]interface{}{
 			"IndexView": indexView,
 			"Tags":      tags,
 		},
 	}
-	v = b.LoadDefaults(v, r)
-	render.PartialTemplate(&output, "blog/tags.partial", render.Config{
-		Request:    r,
-		Vars:       &v,
-		WithLayout: false,
-		Functions:  b.TemplateFuncs(nil, nil, nil),
-	})
-	// b.RenderPartialTemplate(&output, r, "blog/tags.partial", v, false, nil)
+	b.RenderTemplate(&output, r, "blog/tags.partial", v)
 
 	return template.HTML(output.String())
 }
@@ -455,6 +448,7 @@ func (b *Blog) RenderPost(r *http.Request, p *posts.Post, indexView bool, numCom
 	}
 
 	meta := render.Vars{
+		NoLayout: true,
 		Data: map[interface{}]interface{}{
 			"Post":        p,
 			"Rendered":    rendered,
@@ -465,7 +459,7 @@ func (b *Blog) RenderPost(r *http.Request, p *posts.Post, indexView bool, numCom
 		},
 	}
 	output := bytes.Buffer{}
-	err = b.RenderPartialTemplate(&output, r, "blog/entry.partial", meta, false, nil)
+	err = b.RenderTemplate(&output, r, "blog/entry.partial", meta)
 	if err != nil {
 		return template.HTML(fmt.Sprintf("[template error in blog/entry.partial: %s]", err.Error()))
 	}
