@@ -8,6 +8,7 @@ import (
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/responses"
 	"github.com/kirsle/blog/core/internal/sessions"
 )
 
@@ -20,7 +21,7 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 	// Reject if we're already set up.
 	s, _ := settings.Load()
 	if s.Initialized {
-		b.FlashAndRedirect(w, r, "/", "This website has already been configured.")
+		responses.FlashAndRedirect(w, r, "/", "This website has already been configured.")
 		return
 	}
 
@@ -58,7 +59,7 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 
 			// All set!
 			b.Login(w, r, user)
-			b.FlashAndRedirect(w, r, "/admin", "Admin user created and logged in.")
+			responses.FlashAndRedirect(w, r, "/admin", "Admin user created and logged in.")
 			return
 		}
 	}

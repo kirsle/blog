@@ -17,6 +17,7 @@ import (
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/responses"
 	"github.com/kirsle/blog/core/internal/sessions"
 )
 
@@ -152,7 +153,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 	c := &comments.Comment{}
 	c.ParseForm(r)
 	if c.ThreadID == "" {
-		b.FlashAndRedirect(w, r, "/", "No thread ID found in the comment form.")
+		responses.FlashAndRedirect(w, r, "/", "No thread ID found in the comment form.")
 		return
 	}
 
@@ -173,13 +174,13 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 		id := r.FormValue("id")
 		c, err = t.Find(id)
 		if err != nil {
-			b.FlashAndRedirect(w, r, "/", "That comment was not found.")
+			responses.FlashAndRedirect(w, r, "/", "That comment was not found.")
 			return
 		}
 
 		// Verify they have the matching edit token. Admin users are allowed.
 		if c.EditToken != editToken && !currentUser.Admin {
-			b.FlashAndRedirect(w, r, origin, "You don't have permission to edit that comment.")
+			responses.FlashAndRedirect(w, r, origin, "You don't have permission to edit that comment.")
 			return
 		}
 
@@ -190,7 +191,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 	// Are we deleting said post?
 	if submit == "confirm-delete" {
 		t.Delete(c.ID)
-		b.FlashAndRedirect(w, r, origin, "Comment deleted!")
+		responses.FlashAndRedirect(w, r, origin, "Comment deleted!")
 		return
 	}
 
@@ -227,7 +228,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 			// Append their comment.
 			err := t.Post(c)
 			if err != nil {
-				b.FlashAndRedirect(w, r, c.OriginURL, "Error posting comment: %s", err)
+				responses.FlashAndRedirect(w, r, c.OriginURL, "Error posting comment: %s", err)
 				return
 			}
 			b.NotifyComment(c)
@@ -237,14 +238,14 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 				if _, err := mail.ParseAddress(c.Email); err == nil {
 					m := comments.LoadMailingList()
 					m.Subscribe(t.ID, c.Email)
-					b.FlashAndRedirect(w, r, c.OriginURL,
+					responses.FlashAndRedirect(w, r, c.OriginURL,
 						"Comment posted, and you've been subscribed to "+
 							"future comments on this page.",
 					)
 					return
 				}
 			}
-			b.FlashAndRedirect(w, r, c.OriginURL, "Comment posted!")
+			responses.FlashAndRedirect(w, r, c.OriginURL, "Comment posted!")
 			log.Info("t: %v", t.Comments)
 			return
 		}
@@ -273,7 +274,7 @@ func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 		m := comments.LoadMailingList()
 		m.UnsubscribeAll(email)
-		b.FlashAndRedirect(w, r, "/comments/subscription",
+		responses.FlashAndRedirect(w, r, "/comments/subscription",
 			"You have been unsubscribed from all mailing lists.",
 		)
 		return
@@ -285,7 +286,7 @@ func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	if thread != "" && email != "" {
 		m := comments.LoadMailingList()
 		m.Unsubscribe(thread, email)
-		b.FlashAndRedirect(w, r, "/comments/subscription", "You have been unsubscribed successfully.")
+		responses.FlashAndRedirect(w, r, "/comments/subscription", "You have been unsubscribed successfully.")
 		return
 	}
 
@@ -311,7 +312,7 @@ func (b *Blog) QuickDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		t.Delete(c.ID)
 	}
 
-	b.FlashAndRedirect(w, r, "/", "Comment deleted!")
+	responses.FlashAndRedirect(w, r, "/", "Comment deleted!")
 }
 
 // GetEditToken gets or generates an edit token from the user's session, which

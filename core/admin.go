@@ -14,6 +14,7 @@ import (
 	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/responses"
 	"github.com/urfave/negroni"
 )
 
@@ -60,18 +61,18 @@ func (b *Blog) EditorHandler(w http.ResponseWriter, r *http.Request) {
 			body = []byte(r.FormValue("body"))
 			err := ioutil.WriteFile(fp, body, 0644)
 			if err != nil {
-				b.Flash(w, r, "Error saving: %s", err)
+				responses.Flash(w, r, "Error saving: %s", err)
 			} else {
-				b.FlashAndRedirect(w, r, "/admin/editor?file="+url.QueryEscape(file), "Page saved successfully!")
+				responses.FlashAndRedirect(w, r, "/admin/editor?file="+url.QueryEscape(file), "Page saved successfully!")
 				return
 			}
 		} else if deleting {
 			fp = filepath.Join(b.UserRoot, file)
 			err := os.Remove(fp)
 			if err != nil {
-				b.FlashAndRedirect(w, r, "/admin/editor", "Error deleting: %s", err)
+				responses.FlashAndRedirect(w, r, "/admin/editor", "Error deleting: %s", err)
 			} else {
-				b.FlashAndRedirect(w, r, "/admin/editor", "Page deleted!")
+				responses.FlashAndRedirect(w, r, "/admin/editor", "Page deleted!")
 				return
 			}
 		} else {
@@ -94,7 +95,7 @@ func (b *Blog) EditorHandler(w http.ResponseWriter, r *http.Request) {
 			if !os.IsNotExist(err) && !f.IsDir() {
 				body, err = ioutil.ReadFile(fp)
 				if err != nil {
-					b.Flash(w, r, "Error reading %s: %s", fp, err)
+					responses.Flash(w, r, "Error reading %s: %s", fp, err)
 				}
 			}
 
@@ -225,7 +226,7 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 			settings.Save()
 			b.Configure()
 
-			b.FlashAndReload(w, r, "Settings have been saved!")
+			responses.FlashAndReload(w, r, "Settings have been saved!")
 			return
 		}
 	}

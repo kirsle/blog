@@ -21,6 +21,7 @@ import (
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/responses"
 	"github.com/urfave/negroni"
 )
 
@@ -57,7 +58,7 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 			b.NotFound(w, r, "Not Found")
 			return
 		}
-		b.Redirect(w, "/tagged/"+tag)
+		responses.Redirect(w, "/tagged/"+tag)
 	})
 	r.HandleFunc("/blog/entry/{fragment}", func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
@@ -66,7 +67,7 @@ func (b *Blog) BlogRoutes(r *mux.Router) {
 			b.NotFound(w, r, "Not Found")
 			return
 		}
-		b.Redirect(w, "/"+fragment)
+		responses.Redirect(w, "/"+fragment)
 	})
 
 	// Login-required routers.
@@ -517,8 +518,8 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					v.Error = err
 				} else {
-					b.Flash(w, r, "Post created!")
-					b.Redirect(w, "/"+post.Fragment)
+					responses.Flash(w, r, "Post created!")
+					responses.Redirect(w, "/"+post.Fragment)
 				}
 			}
 		}
@@ -542,7 +543,7 @@ func (b *Blog) DeletePost(w http.ResponseWriter, r *http.Request) {
 		idStr = r.URL.Query().Get("id")
 	}
 	if idStr == "" {
-		b.FlashAndRedirect(w, r, "/admin", "No post ID given for deletion!")
+		responses.FlashAndRedirect(w, r, "/admin", "No post ID given for deletion!")
 		return
 	}
 
@@ -551,14 +552,14 @@ func (b *Blog) DeletePost(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		post, err = posts.Load(id)
 		if err != nil {
-			b.FlashAndRedirect(w, r, "/admin", "That post ID was not found.")
+			responses.FlashAndRedirect(w, r, "/admin", "That post ID was not found.")
 			return
 		}
 	}
 
 	if r.Method == http.MethodPost {
 		post.Delete()
-		b.FlashAndRedirect(w, r, "/admin", "Blog entry deleted!")
+		responses.FlashAndRedirect(w, r, "/admin", "Blog entry deleted!")
 		return
 	}
 

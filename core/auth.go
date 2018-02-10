@@ -9,6 +9,7 @@ import (
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/core/internal/responses"
 	"github.com/kirsle/blog/core/internal/sessions"
 )
 
@@ -23,7 +24,7 @@ func (b *Blog) AuthRoutes(r *mux.Router) {
 // the user to the login page.
 func (b *Blog) MustLogin(w http.ResponseWriter, r *http.Request) {
 	log.Info("MustLogin for %s", r.URL.Path)
-	b.Redirect(w, "/login?next="+r.URL.Path)
+	responses.Redirect(w, "/login?next="+r.URL.Path)
 }
 
 // Login logs the browser in as the given user.
@@ -67,15 +68,15 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 				vars.Error = errors.New("bad username or password")
 			} else {
 				// Login OK!
-				b.Flash(w, r, "Login OK!")
+				responses.Flash(w, r, "Login OK!")
 				b.Login(w, r, user)
 
 				// A next URL given? TODO: actually get to work
 				log.Info("Redirect after login to: %s", nextURL)
 				if len(nextURL) > 0 && nextURL[0] == '/' {
-					b.Redirect(w, nextURL)
+					responses.Redirect(w, nextURL)
 				} else {
-					b.Redirect(w, "/")
+					responses.Redirect(w, "/")
 				}
 				return
 			}
@@ -91,25 +92,25 @@ func (b *Blog) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	delete(session.Values, "logged-in")
 	delete(session.Values, "user-id")
 	session.Save(r, w)
-	b.Redirect(w, "/")
+	responses.Redirect(w, "/")
 }
 
 // AccountHandler shows the account settings page.
 func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.LoggedIn(r) {
-		b.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!")
+		responses.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!")
 		return
 	}
 	currentUser, err := auth.CurrentUser(r)
 	if err != nil {
-		b.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!!")
+		responses.FlashAndRedirect(w, r, "/login?next=/account", "You must be logged in to do that!!")
 		return
 	}
 
 	// Load an editable copy of the user.
 	user, err := users.Load(currentUser.ID)
 	if err != nil {
-		b.FlashAndRedirect(w, r, "/login?next=/account", "User ID %d not loadable?", currentUser.ID)
+		responses.FlashAndRedirect(w, r, "/login?next=/account", "User ID %d not loadable?", currentUser.ID)
 		return
 	}
 
@@ -129,14 +130,14 @@ func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
 		form.NewPassword = r.FormValue("newpassword")
 		form.NewPassword2 = r.FormValue("newpassword2")
 		if err = form.Validate(); err != nil {
-			b.Flash(w, r, err.Error())
+			responses.Flash(w, r, err.Error())
 		} else {
 			var ok = true
 
 			// Validate the username is available.
 			if form.Username != user.Username {
 				if _, err = users.LoadUsername(form.Username); err == nil {
-					b.Flash(w, r, "That username already exists.")
+					responses.Flash(w, r, "That username already exists.")
 					ok = false
 				}
 			}
@@ -145,12 +146,12 @@ func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
 			if len(form.OldPassword) > 0 {
 				// Validate their old password.
 				if _, err = users.CheckAuth(form.Username, form.OldPassword); err != nil {
-					b.Flash(w, r, "Your old password is incorrect.")
+					responses.Flash(w, r, "Your old password is incorrect.")
 					ok = false
 				} else {
 					err = user.SetPassword(form.NewPassword)
 					if err != nil {
-						b.Flash(w, r, "Change password error: %s", err)
+						responses.Flash(w, r, "Change password error: %s", err)
 						ok = false
 					}
 				}
@@ -163,9 +164,9 @@ func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
 				user.Email = form.Email
 				err = user.Save()
 				if err != nil {
-					b.Flash(w, r, "Error saving user: %s", err)
+					responses.Flash(w, r, "Error saving user: %s", err)
 				} else {
-					b.FlashAndRedirect(w, r, "/account", "Settings saved!")
+					responses.FlashAndRedirect(w, r, "/account", "Settings saved!")
 					return
 				}
 			}

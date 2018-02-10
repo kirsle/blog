@@ -8,6 +8,7 @@ import (
 
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/render"
+	"github.com/kirsle/blog/core/internal/responses"
 )
 
 // PageHandler is the catch-all route handler, for serving static web pages.
@@ -17,7 +18,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Remove trailing slashes by redirecting them away.
 	if len(path) > 1 && path[len(path)-1] == '/' {
-		b.Redirect(w, strings.TrimRight(path, "/"))
+		responses.Redirect(w, strings.TrimRight(path, "/"))
 		return
 	}
 

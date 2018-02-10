@@ -12,6 +12,7 @@ import (
 	"github.com/kirsle/blog/core/internal/forms"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/settings"
+	"github.com/kirsle/blog/core/internal/responses"
 )
 
 // ContactRoutes attaches the contact URL to the app.
@@ -38,7 +39,7 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 		if r.Method == http.MethodPost {
 			form.ParseForm(r)
 			if err = form.Validate(); err != nil {
-				b.Flash(w, r, err.Error())
+				responses.Flash(w, r, err.Error())
 			} else {
 				go b.SendEmail(Email{
 					To:       cfg.Site.AdminEmail,
@@ -56,7 +57,7 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 				// Log it to disk, too.
 				fh, err := os.OpenFile(filepath.Join(b.UserRoot, ".contact.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 				if err != nil {
-					b.Flash(w, r, "Error logging the message to disk: %s", err)
+					responses.Flash(w, r, "Error logging the message to disk: %s", err)
 				} else {
 					fh.WriteString(fmt.Sprintf(
 						"Date: %s\nName: %s\nEmail: %s\nSubject: %s\n\n%s\n\n--------------------\n\n",
@@ -68,7 +69,7 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 					))
 					fh.Close()
 				}
-				b.FlashAndRedirect(w, r, "/contact", "Your message has been sent.")
+				responses.FlashAndRedirect(w, r, "/contact", "Your message has been sent.")
 			}
 		}
 
