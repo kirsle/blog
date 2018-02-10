@@ -1,16 +1,16 @@
-{{ if .IndexView }}
+{{ if .Data.IndexView }}
     Sorted by most frequently used:
 
     <ul>
-    {{ range .Tags }}
-        <li><a href="/tagged/{{ .Name }}">{{ .Name }}</a> ({{ .Count }})</li>
+    {{ range .Data.Tags }}
+        <li><a href="/tagged/{{ or .Name "Uncategorized" }}">{{ or .Name "Uncategorized" }}</a> ({{ .Count }})</li>
     {{ end }}
     </ul>
 {{ else }}
     <ul>
-    {{ range $i, $t := .Tags }}
+    {{ range $i, $t := .Data.Tags }}
         {{ if le $i 20 }}
-            <li><a href="/tagged/{{ .Name }}">{{ .Name }}</a> ({{ .Count }})</li>
+            <li><a href="/tagged/{{ or .Name "Uncategorized" }}">{{ or .Name "Uncategorized" }}</a> ({{ .Count }})</li>
         {{ end }}
     {{ end }}
     </ul>

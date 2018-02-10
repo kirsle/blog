@@ -24,6 +24,18 @@ h6, .h6 {
     color: #333;
 }
 
+blockquote {
+    border-left: 2px solid #FF0000;
+    padding: 0 10px;
+    margin: 4px 6px;
+}
+blockquote blockquote {
+    border-left-color: #FF9900;
+}
+blockquote blockquote blockquote {
+    border-left-color: #CCCC00;
+}
+
 /*
  * Bootstrap tweaks and overrides
  */

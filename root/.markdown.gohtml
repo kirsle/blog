@@ -3,4 +3,10 @@
 
 {{ .Data.HTML }}
 
+{{ if and .CurrentUser.Admin .Editable }}
+    <p class="mt-4">
+        <strong>Admin:</strong> [<a href="/admin/editor?file={{ .Data.MarkdownPath }}">edit this page</a>]
+    </p>
+{{ end }}
+
 {{ end }}

@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/jsondb"
 	"github.com/kirsle/blog/core/models/comments"
 	"github.com/kirsle/blog/core/models/posts"
 	"github.com/kirsle/golog"

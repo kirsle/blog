@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/kirsle/blog/core"
-	"github.com/kirsle/blog/core/jsondb"
+	"github.com/kirsle/blog/jsondb"
 )
 
 // Build-time config constants.
@@ -51,5 +51,5 @@ func main() {
 		jsondb.SetDebug(true)
 	}
 
-	app.ListenAndServe(fAddress)
+	app.Run(fAddress)
 }
