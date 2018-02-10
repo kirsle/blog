@@ -13,6 +13,7 @@ import (
 
 	"github.com/gorilla/feeds"
 	"github.com/gorilla/mux"
+	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/posts"
 	"github.com/kirsle/blog/core/internal/models/settings"
@@ -439,7 +440,7 @@ func (b *Blog) RenderPost(p *posts.Post, indexView bool, numComments int) templa
 	// Render the post to HTML.
 	var rendered template.HTML
 	if p.ContentType == string(MARKDOWN) {
-		rendered = template.HTML(b.RenderTrustedMarkdown(p.Body))
+		rendered = template.HTML(markdown.RenderTrustedMarkdown(p.Body))
 	} else {
 		rendered = template.HTML(p.Body)
 	}
@@ -490,7 +491,7 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 		switch r.FormValue("submit") {
 		case "preview":
 			if post.ContentType == string(MARKDOWN) {
-				v.Data["preview"] = template.HTML(b.RenderTrustedMarkdown(post.Body))
+				v.Data["preview"] = template.HTML(markdown.RenderTrustedMarkdown(post.Body))
 			} else {
 				v.Data["preview"] = template.HTML(post.Body)
 			}

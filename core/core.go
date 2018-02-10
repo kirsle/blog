@@ -1,3 +1,4 @@
+// Package core implements the core source code of kirsle/blog.
 package core
 
 import (
@@ -7,14 +8,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/kirsle/blog/jsondb/caches"
-	"github.com/kirsle/blog/jsondb/caches/null"
-	"github.com/kirsle/blog/jsondb/caches/redis"
-	"github.com/kirsle/blog/jsondb"
+	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/posts"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/jsondb"
+	"github.com/kirsle/blog/jsondb/caches"
+	"github.com/kirsle/blog/jsondb/caches/null"
+	"github.com/kirsle/blog/jsondb/caches/redis"
 	"github.com/shurcooL/github_flavored_markdown/gfmstyle"
 	"github.com/urfave/negroni"
 )
@@ -76,6 +78,7 @@ func New(documentRoot, userRoot string) *Blog {
 		} else {
 			blog.Cache = cache
 			blog.DB.Cache = cache
+			markdown.Cache = cache
 		}
 	}
 

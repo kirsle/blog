@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/kirsle/blog/core/internal/markdown"
 )
 
 // PageHandler is the catch-all route handler, for serving static web pages.
@@ -54,8 +56,8 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Render it to HTML and find out its title.
 		body := string(source)
-		html := b.RenderTrustedMarkdown(body)
-		title, _ := TitleFromMarkdown(body)
+		html := markdown.RenderTrustedMarkdown(body)
+		title, _ := markdown.TitleFromMarkdown(body)
 
 		b.RenderTemplate(w, r, ".markdown", NewVars(map[interface{}]interface{}{
 			"Title":        title,

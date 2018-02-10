@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/settings"
 	"github.com/microcosm-cc/bluemonday"
@@ -107,7 +108,7 @@ func (b *Blog) NotifyComment(c *comments.Comment) {
 		Data: map[string]interface{}{
 			"Name":    c.Name,
 			"Subject": c.Subject,
-			"Body":    template.HTML(b.RenderMarkdown(c.Body)),
+			"Body":    template.HTML(markdown.RenderMarkdown(c.Body)),
 			"URL":     strings.Trim(s.Site.URL, "/") + c.OriginURL,
 			"QuickDelete": fmt.Sprintf("%s/comments/quick-delete?t=%s&d=%s",
 				strings.Trim(s.Site.URL, "/"),

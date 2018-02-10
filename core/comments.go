@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/comments"
 	"github.com/kirsle/blog/core/internal/models/users"
 )
@@ -62,7 +63,7 @@ func (b *Blog) RenderComments(session *sessions.Session, csrfToken, url, subject
 	// Render all the comments in the thread.
 	userMap := map[int]*users.User{}
 	for _, c := range thread.Comments {
-		c.HTML = template.HTML(b.RenderMarkdown(c.Body))
+		c.HTML = template.HTML(markdown.RenderMarkdown(c.Body))
 		c.ThreadID = thread.ID
 		c.OriginURL = url
 		c.CSRF = csrfToken
@@ -203,7 +204,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 			c.Email = currentUser.Email
 			c.LoadAvatar()
 		}
-		c.HTML = template.HTML(b.RenderMarkdown(c.Body))
+		c.HTML = template.HTML(markdown.RenderMarkdown(c.Body))
 	case "post":
 		if err := c.Validate(); err != nil {
 			v.Error = err

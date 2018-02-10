@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/core/internal/forms"
+	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/settings"
 )
 
@@ -47,7 +48,7 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 					Template: ".email/contact.gohtml",
 					Data: map[string]interface{}{
 						"Name":    form.Name,
-						"Message": template.HTML(b.RenderMarkdown(form.Message)),
+						"Message": template.HTML(markdown.RenderMarkdown(form.Message)),
 						"Email":   form.Email,
 					},
 				})
