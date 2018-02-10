@@ -106,6 +106,8 @@ func (b *Blog) Configure() {
 			markdown.Cache = cache
 		}
 	}
+
+	b.registerErrors()
 }
 
 // SetupHTTP initializes the Negroni middleware engine and registers routes.

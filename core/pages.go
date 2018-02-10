@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/kirsle/blog/core/internal/controllers/posts"
+	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/render"
 	"github.com/kirsle/blog/core/internal/responses"
@@ -35,6 +36,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 		// See if it resolves as a blog entry.
 		err = postctl.ViewPost(w, r, strings.TrimLeft(path, "/"))
 		if err != nil {
+			log.Error("Post by fragment %s not found: %s", path, err)
 			responses.NotFound(w, r, "The page you were looking for was not found.")
 		}
 		return
