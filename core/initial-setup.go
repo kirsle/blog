@@ -14,8 +14,9 @@ import (
 
 // SetupHandler is the initial blog setup route.
 func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
-	vars := render.Vars{
-		Form: forms.Setup{},
+	form := &forms.Setup{}
+	vars := map[string]interface{}{
+		"Form": form,
 	}
 
 	// Reject if we're already set up.
@@ -26,15 +27,10 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		form := forms.Setup{
-			Username: r.FormValue("username"),
-			Password: r.FormValue("password"),
-			Confirm:  r.FormValue("confirm"),
-		}
-		vars.Form = form
+		form.ParseForm(r)
 		err := form.Validate()
 		if err != nil {
-			vars.Error = err
+			vars["Error"] = err
 		} else {
 			// Save the site config.
 			log.Info("Creating default website config file")
@@ -54,7 +50,7 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 			err := users.Create(user)
 			if err != nil {
 				log.Error("Error: %v", err)
-				vars.Error = err
+				vars["Error"] = err
 			}
 
 			// All set!
@@ -64,5 +60,5 @@ func (b *Blog) SetupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	b.RenderTemplate(w, r, "initial-setup", vars)
+	render.Template(w, r, "initial-setup", vars)
 }

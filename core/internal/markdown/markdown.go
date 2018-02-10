@@ -125,8 +125,10 @@ func Pygmentize(language, source string) (string, error) {
 	cacheKey := "pygmentize:" + hash
 
 	// Do we have it cached?
-	if cached, err := Cache.Get(cacheKey); err == nil && len(cached) > 0 {
-		return string(cached), nil
+	if Cache != nil {
+		if cached, err := Cache.Get(cacheKey); err == nil && len(cached) > 0 {
+			return string(cached), nil
+		}
 	}
 
 	// Defer to the `pygmentize` command
@@ -150,9 +152,11 @@ func Pygmentize(language, source string) (string, error) {
 	}
 
 	result = out.String()
-	err := Cache.Set(cacheKey, []byte(result), 60*60*24) // cool md5's don't change
-	if err != nil {
-		log.Error("Couldn't cache Pygmentize output: %s", err)
+	if Cache != nil {
+		err := Cache.Set(cacheKey, []byte(result), 60*60*24) // cool md5's don't change
+		if err != nil {
+			log.Error("Couldn't cache Pygmentize output: %s", err)
+		}
 	}
 
 	return result, nil

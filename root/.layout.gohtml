@@ -79,9 +79,9 @@
 
             {{ template "content" . }}
 
-            {{ if and .CurrentUser.Admin .Editable }}
+            {{ if and .CurrentUser.Admin .Editable (ne .TemplatePath ".markdown") }}
                 <p class="mt-4">
-                    <strong>Admin:</strong> [<a href="/admin/editor?file={{ or .Data.MarkdownFile .Path }}">edit this page</a>]
+                    <strong>Admin:</strong> [<a href="/admin/editor?file={{ .TemplatePath }}">edit this page</a>]
                 </p>
             {{ end }}
         </div>

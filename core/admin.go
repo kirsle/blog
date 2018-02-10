@@ -33,7 +33,7 @@ func (b *Blog) AdminRoutes(r *mux.Router) {
 
 // AdminHandler is the admin landing page.
 func (b *Blog) AdminHandler(w http.ResponseWriter, r *http.Request) {
-	render.Template(w, r, "admin/index", NewVars())
+	render.Template(w, r, "admin/index", nil)
 }
 
 // FileTree holds information about files in the document roots.
@@ -106,13 +106,13 @@ func (b *Blog) EditorHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		v := NewVars(map[interface{}]interface{}{
+		v := map[string]interface{}{
 			"File":     file,
 			"Path":     fp,
 			"Body":     string(body),
 			"FromCore": fromCore,
-		})
-		b.RenderTemplate(w, r, "admin/editor", v)
+		}
+		render.Template(w, r, "admin/editor", v)
 		return
 	}
 
@@ -165,19 +165,19 @@ func (b *Blog) editorFileList(w http.ResponseWriter, r *http.Request) {
 
 		trees = append(trees, tree)
 	}
-	v := NewVars(map[interface{}]interface{}{
+	v := map[string]interface{}{
 		"FileTrees": trees,
-	})
-	b.RenderTemplate(w, r, "admin/filelist", v)
+	}
+	render.Template(w, r, "admin/filelist", v)
 }
 
 // SettingsHandler lets you configure the app from the frontend.
 func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
-	v := NewVars()
-
 	// Get the current settings.
 	settings, _ := settings.Load()
-	v.Data["s"] = settings
+	v := map[string]interface{}{
+		"s": settings,
+	}
 
 	if r.Method == http.MethodPost {
 		redisPort, _ := strconv.Atoi(r.FormValue("redis-port"))
@@ -220,7 +220,7 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		settings.Mail.Password = form.MailPassword
 		err := form.Validate()
 		if err != nil {
-			v.Error = err
+			v["Error"] = err
 		} else {
 			// Save the settings.
 			settings.Save()
@@ -230,5 +230,5 @@ func (b *Blog) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	b.RenderTemplate(w, r, "admin/settings", v)
+	render.Template(w, r, "admin/settings", v)
 }

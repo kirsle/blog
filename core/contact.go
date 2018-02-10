@@ -12,15 +12,17 @@ import (
 	"github.com/kirsle/blog/core/internal/forms"
 	"github.com/kirsle/blog/core/internal/markdown"
 	"github.com/kirsle/blog/core/internal/models/settings"
+	"github.com/kirsle/blog/core/internal/render"
 	"github.com/kirsle/blog/core/internal/responses"
 )
 
 // ContactRoutes attaches the contact URL to the app.
 func (b *Blog) ContactRoutes(r *mux.Router) {
 	r.HandleFunc("/contact", func(w http.ResponseWriter, r *http.Request) {
-		v := NewVars()
-		form := forms.Contact{}
-		v.Form = &form
+		form := &forms.Contact{}
+		v := map[string]interface{}{
+			"Form": form,
+		}
 
 		// If there is no site admin, show an error.
 		cfg, err := settings.Load()
@@ -73,6 +75,6 @@ func (b *Blog) ContactRoutes(r *mux.Router) {
 			}
 		}
 
-		b.RenderTemplate(w, r, "contact", v)
+		render.Template(w, r, "contact", v)
 	})
 }

@@ -148,7 +148,6 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 		b.BadRequest(w, r, "That method is not allowed.")
 		return
 	}
-	v := NewVars()
 	currentUser, _ := auth.CurrentUser(r)
 	editToken := b.GetEditToken(w, r)
 	submit := r.FormValue("submit")
@@ -205,6 +204,8 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["c.email"] = c.Email
 	session.Save(r, w)
 
+	v := map[string]interface{}{}
+
 	// Previewing, deleting, or posting?
 	switch submit {
 	case ActionPreview, ActionDelete:
@@ -216,7 +217,7 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 		c.HTML = template.HTML(markdown.RenderMarkdown(c.Body))
 	case ActionPost:
 		if err := c.Validate(); err != nil {
-			v.Error = err
+			v["Error"] = err
 		} else {
 			// Store our edit token, if we don't have one. For example, admins
 			// can edit others' comments but should not replace their edit token.
@@ -255,25 +256,24 @@ func (b *Blog) CommentHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	v.Data["Thread"] = t
-	v.Data["Comment"] = c
-	v.Data["Editing"] = c.Editing
-	v.Data["Deleting"] = submit == ActionDelete
+	v["Thread"] = t
+	v["Comment"] = c
+	v["Editing"] = c.Editing
+	v["Deleting"] = submit == ActionDelete
 
-	b.RenderTemplate(w, r, "comments/index.gohtml", v)
+	render.Template(w, r, "comments/index.gohtml", v)
 }
 
 // SubscriptionHandler to opt out of subscriptions.
 func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
-	v := NewVars()
-
+	var err error
 	// POST to unsubscribe from all threads.
 	if r.Method == http.MethodPost {
 		email := r.FormValue("email")
 		if email == "" {
-			v.Error = errors.New("email address is required to unsubscribe from comment threads")
+			err = errors.New("email address is required to unsubscribe from comment threads")
 		} else if _, err := mail.ParseAddress(email); err != nil {
-			v.Error = errors.New("invalid email address")
+			err = errors.New("invalid email address")
 		}
 
 		m := comments.LoadMailingList()
@@ -294,7 +294,9 @@ func (b *Blog) SubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b.RenderTemplate(w, r, "comments/subscription.gohtml", v)
+	render.Template(w, r, "comments/subscription.gohtml", map[string]error{
+		"Error": err,
+	})
 }
 
 // QuickDeleteHandler allows the admin to quickly delete spam without logging in.

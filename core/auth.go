@@ -9,6 +9,7 @@ import (
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/middleware/auth"
 	"github.com/kirsle/blog/core/internal/models/users"
+	"github.com/kirsle/blog/core/internal/render"
 	"github.com/kirsle/blog/core/internal/responses"
 	"github.com/kirsle/blog/core/internal/sessions"
 )
@@ -40,8 +41,9 @@ func (b *Blog) Login(w http.ResponseWriter, r *http.Request, u *users.User) erro
 
 // LoginHandler shows and handles the login page.
 func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	vars := NewVars()
-	vars.Form = forms.Setup{}
+	vars := map[string]interface{}{
+		"Form": forms.Setup{},
+	}
 
 	var nextURL string
 	if r.Method == http.MethodPost {
@@ -49,22 +51,22 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		nextURL = r.URL.Query().Get("next")
 	}
-	vars.Data["NextURL"] = nextURL
+	vars["NextURL"] = nextURL
 
 	if r.Method == http.MethodPost {
 		form := &forms.Login{
 			Username: r.FormValue("username"),
 			Password: r.FormValue("password"),
 		}
-		vars.Form = form
+		vars["Form"] = form
 		err := form.Validate()
 		if err != nil {
-			vars.Error = err
+			vars["Error"] = err
 		} else {
 			// Test the login.
 			user, err := users.CheckAuth(form.Username, form.Password)
 			if err != nil {
-				vars.Error = errors.New("bad username or password")
+				vars["Error"] = errors.New("bad username or password")
 			} else {
 				// Login OK!
 				responses.Flash(w, r, "Login OK!")
@@ -82,7 +84,7 @@ func (b *Blog) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	b.RenderTemplate(w, r, "login", vars)
+	render.Template(w, r, "login", vars)
 }
 
 // LogoutHandler logs the user out and redirects to the home page.
@@ -113,13 +115,14 @@ func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v := NewVars()
 	form := &forms.Account{
 		Username: user.Username,
 		Email:    user.Email,
 		Name:     user.Name,
 	}
-	v.Form = form
+	v := map[string]interface{}{
+		"Form": form,
+	}
 
 	if r.Method == http.MethodPost {
 		form.Username = users.Normalize(r.FormValue("username"))
@@ -172,5 +175,5 @@ func (b *Blog) AccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	b.RenderTemplate(w, r, "account", v)
+	render.Template(w, r, "account", v)
 }

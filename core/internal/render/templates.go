@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kirsle/blog/core/internal/forms"
 	"github.com/kirsle/blog/core/internal/log"
 	"github.com/kirsle/blog/core/internal/middleware"
 	"github.com/kirsle/blog/core/internal/middleware/auth"
@@ -20,12 +19,12 @@ import (
 // Vars is an interface to implement by the templates to pass their own custom
 // variables in. It auto-loads global template variables (site name, etc.)
 // when the template is rendered.
-type Vars struct {
+type vars struct {
 	// Global, "constant" template variables.
 	SetupNeeded     bool
 	Title           string
 	Path            string
-	TemplatePath    string
+	TemplatePath    string // actual template file on disk
 	LoggedIn        bool
 	CurrentUser     *users.User
 	CSRF            string
@@ -34,36 +33,11 @@ type Vars struct {
 	RequestTime     time.Time
 	RequestDuration time.Duration
 
-	// Configuration variables
-	NoLayout bool // don't wrap in .layout.html, just render the template
-
 	// Common template variables.
 	Message string
 	Flashes []string
 	Error   error
-	Data    map[interface{}]interface{}
-	Form    forms.Form
-}
-
-// loadDefaults combines template variables with default, globally available vars.
-func (v *Vars) loadDefaults(r *http.Request) {
-	// Get the site settings.
-	s, err := settings.Load()
-	if err != nil {
-		s = settings.Defaults()
-	}
-
-	if s.Initialized == false && !strings.HasPrefix(r.URL.Path, "/initial-setup") {
-		v.SetupNeeded = true
-	}
-	v.Request = r
-	v.RequestTime = r.Context().Value(types.StartTimeKey).(time.Time)
-	v.Title = s.Site.Title
-	v.Path = r.URL.Path
-
-	user, err := auth.CurrentUser(r)
-	v.CurrentUser = user
-	v.LoggedIn = err == nil
+	Data    interface{}
 }
 
 // Template responds with an HTML template.
@@ -72,9 +46,30 @@ func (v *Vars) loadDefaults(r *http.Request) {
 // website title and user login status), the user's session may be updated with
 // new CSRF token, and other such things. If you just want to render a template
 // without all that nonsense, use RenderPartialTemplate.
-func Template(w io.Writer, r *http.Request, path string, v Vars) error {
+func Template(w io.Writer, r *http.Request, path string, data interface{}) error {
+	isPartial := strings.Contains(path, ".partial")
+
+	// Get the site settings.
+	s, err := settings.Load()
+	if err != nil {
+		s = settings.Defaults()
+	}
+
 	// Inject globally available variables.
-	v.loadDefaults(r)
+	v := vars{
+		SetupNeeded: s.Initialized == false && !strings.HasPrefix(r.URL.Path, "/initial-setup"),
+
+		Request:     r,
+		RequestTime: r.Context().Value(types.StartTimeKey).(time.Time),
+		Title:       s.Site.Title,
+		Path:        r.URL.Path,
+
+		Data: data,
+	}
+
+	user, err := auth.CurrentUser(r)
+	v.CurrentUser = user
+	v.LoggedIn = err == nil
 
 	// If this is the HTTP response, handle session-related things.
 	if rw, ok := w.(http.ResponseWriter); ok {
@@ -97,11 +92,9 @@ func Template(w io.Writer, r *http.Request, path string, v Vars) error {
 	v.RequestDuration = time.Now().Sub(v.RequestTime)
 	v.Editable = !strings.HasPrefix(path, "admin/")
 
-	// v interface{}, withLayout bool, functions map[string]interface{}) error {
 	var (
 		layout       Filepath
 		templateName string
-		err          error
 	)
 
 	// Find the file path to the template.
@@ -110,9 +103,10 @@ func Template(w io.Writer, r *http.Request, path string, v Vars) error {
 		log.Error("RenderTemplate(%s): file not found", path)
 		return err
 	}
+	v.TemplatePath = filepath.URI
 
 	// Get the layout template.
-	if !v.NoLayout {
+	if !isPartial {
 		templateName = "layout"
 		layout, err = ResolvePath(".layout")
 		if err != nil {
@@ -135,7 +129,7 @@ func Template(w io.Writer, r *http.Request, path string, v Vars) error {
 	// Parse the template files. The layout comes first because it's the wrapper
 	// and allows the filepath template to set the page title.
 	var templates []string
-	if !v.NoLayout {
+	if !isPartial {
 		templates = append(templates, layout.Absolute)
 	}
 	t, err = t.ParseFiles(append(templates, commentEntry.Absolute, filepath.Absolute)...)

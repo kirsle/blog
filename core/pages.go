@@ -41,7 +41,7 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Is it a template file?
 	if strings.HasSuffix(filepath.URI, ".gohtml") {
-		b.RenderTemplate(w, r, filepath.URI, NewVars())
+		render.Template(w, r, filepath.URI, nil)
 		return
 	}
 
@@ -58,11 +58,11 @@ func (b *Blog) PageHandler(w http.ResponseWriter, r *http.Request) {
 		html := markdown.RenderTrustedMarkdown(body)
 		title, _ := markdown.TitleFromMarkdown(body)
 
-		b.RenderTemplate(w, r, ".markdown", NewVars(map[interface{}]interface{}{
+		render.Template(w, r, ".markdown", map[string]interface{}{
 			"Title":        title,
 			"HTML":         template.HTML(html),
-			"MarkdownFile": filepath.URI,
-		}))
+			"MarkdownPath": filepath.URI,
+		})
 		return
 	}
 

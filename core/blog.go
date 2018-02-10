@@ -151,7 +151,7 @@ func (b *Blog) Tagged(w http.ResponseWriter, r *http.Request) {
 	tag, ok := params["tag"]
 	if !ok {
 		// They're listing all the tags.
-		b.RenderTemplate(w, r, "blog/tags.gohtml", NewVars())
+		render.Template(w, r, "blog/tags.gohtml", nil)
 		return
 	}
 
@@ -182,11 +182,11 @@ func (b *Blog) CommonIndexHandler(w http.ResponseWriter, r *http.Request, tag, p
 		title = "Blog"
 	}
 
-	b.RenderTemplate(w, r, "blog/index", NewVars(map[interface{}]interface{}{
+	render.Template(w, r, "blog/index", map[string]interface{}{
 		"Title":   title,
 		"Tag":     tag,
 		"Privacy": privacy,
-	}))
+	})
 }
 
 // RecentPosts gets and filters the blog entries and orders them by most recent.
@@ -305,15 +305,12 @@ func (b *Blog) RenderIndex(r *http.Request, tag, privacy string) template.HTML {
 
 	// Render the blog index partial.
 	var output bytes.Buffer
-	v := render.Vars{
-		NoLayout: true,
-		Data: map[interface{}]interface{}{
-			"PreviousPage": previousPage,
-			"NextPage":     nextPage,
-			"View":         view,
-		},
+	v := map[string]interface{}{
+		"PreviousPage": previousPage,
+		"NextPage":     nextPage,
+		"View":         view,
 	}
-	b.RenderTemplate(&output, r, "blog/index.partial", v)
+	render.Template(&output, r, "blog/index.partial", v)
 
 	return template.HTML(output.String())
 }
@@ -331,14 +328,11 @@ func (b *Blog) RenderTags(r *http.Request, indexView bool) template.HTML {
 	}
 
 	var output bytes.Buffer
-	v := render.Vars{
-		NoLayout: true,
-		Data: map[interface{}]interface{}{
-			"IndexView": indexView,
-			"Tags":      tags,
-		},
+	v := map[string]interface{}{
+		"IndexView": indexView,
+		"Tags":      tags,
 	}
-	b.RenderTemplate(&output, r, "blog/tags.partial", v)
+	render.Template(&output, r, "blog/tags.partial", v)
 
 	return template.HTML(output.String())
 }
@@ -384,10 +378,10 @@ func (b *Blog) BlogArchive(w http.ResponseWriter, r *http.Request) {
 		result = append(result, byMonth[label])
 	}
 
-	v := NewVars(map[interface{}]interface{}{
+	v := map[string]interface{}{
 		"Archive": result,
-	})
-	b.RenderTemplate(w, r, "blog/archive", v)
+	}
+	render.Template(w, r, "blog/archive", v)
 }
 
 // viewPost is the underlying implementation of the handler to view a blog
@@ -408,10 +402,10 @@ func (b *Blog) viewPost(w http.ResponseWriter, r *http.Request, fragment string)
 		}
 	}
 
-	v := NewVars(map[interface{}]interface{}{
+	v := map[string]interface{}{
 		"Post": post,
-	})
-	b.RenderTemplate(w, r, "blog/entry", v)
+	}
+	render.Template(w, r, "blog/entry", v)
 
 	return nil
 }
@@ -447,19 +441,16 @@ func (b *Blog) RenderPost(r *http.Request, p *posts.Post, indexView bool, numCom
 		rendered = template.HTML(p.Body)
 	}
 
-	meta := render.Vars{
-		NoLayout: true,
-		Data: map[interface{}]interface{}{
-			"Post":        p,
-			"Rendered":    rendered,
-			"Author":      author,
-			"IndexView":   indexView,
-			"Snipped":     snipped,
-			"NumComments": numComments,
-		},
+	meta := map[string]interface{}{
+		"Post":        p,
+		"Rendered":    rendered,
+		"Author":      author,
+		"IndexView":   indexView,
+		"Snipped":     snipped,
+		"NumComments": numComments,
 	}
 	output := bytes.Buffer{}
-	err = b.RenderTemplate(&output, r, "blog/entry.partial", meta)
+	err = render.Template(&output, r, "blog/entry.partial", meta)
 	if err != nil {
 		return template.HTML(fmt.Sprintf("[template error in blog/entry.partial: %s]", err.Error()))
 	}
@@ -469,9 +460,9 @@ func (b *Blog) RenderPost(r *http.Request, p *posts.Post, indexView bool, numCom
 
 // EditBlog is the blog writing and editing page.
 func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
-	v := NewVars(map[interface{}]interface{}{
+	v := map[string]interface{}{
 		"preview": "",
-	})
+	}
 	var post *posts.Post
 
 	// Are we editing an existing post?
@@ -480,7 +471,7 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			post, err = posts.Load(id)
 			if err != nil {
-				v.Error = errors.New("that post ID was not found")
+				v["Error"] = errors.New("that post ID was not found")
 				post = posts.New()
 			}
 		}
@@ -496,13 +487,13 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 		switch r.FormValue("submit") {
 		case "preview":
 			if post.ContentType == string(MARKDOWN) {
-				v.Data["preview"] = template.HTML(markdown.RenderTrustedMarkdown(post.Body))
+				v["preview"] = template.HTML(markdown.RenderTrustedMarkdown(post.Body))
 			} else {
-				v.Data["preview"] = template.HTML(post.Body)
+				v["preview"] = template.HTML(post.Body)
 			}
 		case "post":
 			if err := post.Validate(); err != nil {
-				v.Error = err
+				v["Error"] = err
 			} else {
 				author, _ := auth.CurrentUser(r)
 				post.AuthorID = author.ID
@@ -510,7 +501,7 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 				post.Updated = time.Now().UTC()
 				err = post.Save()
 				if err != nil {
-					v.Error = err
+					v["Error"] = err
 				} else {
 					responses.Flash(w, r, "Post created!")
 					responses.Redirect(w, "/"+post.Fragment)
@@ -519,16 +510,16 @@ func (b *Blog) EditBlog(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	v.Data["post"] = post
-	b.RenderTemplate(w, r, "blog/edit", v)
+	v["post"] = post
+	render.Template(w, r, "blog/edit", v)
 }
 
 // DeletePost to delete a blog entry.
 func (b *Blog) DeletePost(w http.ResponseWriter, r *http.Request) {
 	var post *posts.Post
-	v := NewVars(map[interface{}]interface{}{
+	v := map[string]interface{}{
 		"Post": nil,
-	})
+	}
 
 	var idStr string
 	if r.Method == http.MethodPost {
@@ -557,6 +548,6 @@ func (b *Blog) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	v.Data["Post"] = post
-	b.RenderTemplate(w, r, "blog/delete", v)
+	v["Post"] = post
+	render.Template(w, r, "blog/delete", v)
 }
