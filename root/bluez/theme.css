@@ -2,10 +2,6 @@
  * Globals
  */
 
-* {
-    transition-duration: 0.5s;
-}
-
 body {
     font-family: Verdana, Helvetica, Arial, sans-serif;
     color: #555;

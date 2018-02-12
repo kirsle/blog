@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kirsle/blog/core"
+	"github.com/kirsle/blog"
 	"github.com/kirsle/blog/jsondb"
 )
 
@@ -41,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	app := core.New(DocumentRoot, userRoot)
+	app := blog.New(DocumentRoot, userRoot)
 	if fDebug {
 		app.Debug = true
 	}
