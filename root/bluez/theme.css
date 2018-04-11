@@ -9,6 +9,11 @@ body {
     background-color: #DEF;
 }
 
+img {
+    max-width: 100%;
+    height: auto;
+}
+
 h1, .h1,
 h2, .h2,
 h3, .h3,
