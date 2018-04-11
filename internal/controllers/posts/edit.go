@@ -9,10 +9,10 @@ import (
 
 	"github.com/kirsle/blog/internal/markdown"
 	"github.com/kirsle/blog/internal/middleware/auth"
-	"github.com/kirsle/blog/models/posts"
 	"github.com/kirsle/blog/internal/render"
 	"github.com/kirsle/blog/internal/responses"
 	"github.com/kirsle/blog/internal/types"
+	"github.com/kirsle/blog/models/posts"
 )
 
 // editHandler is the blog writing and editing page.
@@ -21,6 +21,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 		"preview": "",
 	}
 	var post *posts.Post
+	var isNew bool
 
 	// Are we editing an existing post?
 	if idStr := r.FormValue("id"); idStr != "" {
@@ -30,10 +31,12 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				v["Error"] = errors.New("that post ID was not found")
 				post = posts.New()
+				isNew = true
 			}
 		}
 	} else {
 		post = posts.New()
+		isNew = true
 	}
 
 	if r.Method == http.MethodPost {
@@ -55,8 +58,14 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 				author, _ := auth.CurrentUser(r)
 				post.AuthorID = author.ID
 
-				post.Updated = time.Now().UTC()
+				// When editing, allow to not touch the last updated time.
+				if !isNew && r.FormValue("no-update") == "true" {
+					post.Updated = post.Created
+				} else {
+					post.Updated = time.Now().UTC()
+				}
 				err = post.Save()
+
 				if err != nil {
 					v["Error"] = err
 				} else {

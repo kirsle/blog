@@ -21,7 +21,7 @@ build:
 # `make run` to run it in debug mode.
 .PHONY: run
 run:
-	./go-reload cmd/blog/main.go -debug root
+	./go-reload cmd/blog/main.go -debug user-root
 
 # `make test` to run unit tests.
 .PHONY: test

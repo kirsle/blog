@@ -33,12 +33,25 @@ func editorHandler(w http.ResponseWriter, r *http.Request) {
 		// Are they saving?
 		if saving {
 			fp = filepath.Join(*render.UserRoot, file)
-			body = []byte(r.FormValue("body"))
-			err := ioutil.WriteFile(fp, body, 0644)
+			body = []byte(strings.Replace(r.FormValue("body"), "\r\n", "\n", -1))
+
+			// Ensure the folders exist.
+			dir, _ := filepath.Split(fp)
+			err := os.MkdirAll(dir, 0755)
+			if err != nil {
+				responses.Flash(w, r, "Error saving: can't create folder %s: %s", dir, err)
+			}
+
+			// Write the file.
+			err = ioutil.WriteFile(fp, body, 0644)
 			if err != nil {
 				responses.Flash(w, r, "Error saving: %s", err)
 			} else {
-				responses.FlashAndRedirect(w, r, "/admin/editor?file="+url.QueryEscape(file), "Page saved successfully!")
+				if render.HasHTMLSuffix(file) {
+					responses.FlashAndRedirect(w, r, render.URLFromPath(file), "Page saved successfully!")
+				} else {
+					responses.FlashAndRedirect(w, r, "/admin/editor?file="+url.QueryEscape(file), "Page saved successfully!")
+				}
 				return
 			}
 		} else if deleting {
@@ -62,8 +75,11 @@ func editorHandler(w http.ResponseWriter, r *http.Request) {
 			f, err := os.Stat(fp)
 			if os.IsNotExist(err) {
 				fp = filepath.Join(*render.DocumentRoot, file)
-				fromCore = true
 				f, err = os.Stat(fp)
+				if !os.IsNotExist(err) {
+					// The file was found in the core.
+					fromCore = true
+				}
 			}
 
 			// If it exists, load it.
@@ -111,6 +127,11 @@ func editorFileList(w http.ResponseWriter, r *http.Request) {
 
 			// Skip hidden files and directories.
 			if f.IsDir() || rel == "." || strings.HasPrefix(rel, ".private") || strings.HasPrefix(rel, "admin/") {
+				return nil
+			}
+
+			// Hide vendored files.
+			if i == 1 && strings.HasPrefix(rel, "js/ace-editor") {
 				return nil
 			}
 

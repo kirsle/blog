@@ -2,9 +2,23 @@
 {{ define "content" }}
 <h1>Page Editor</h1>
 
+<form class="form-inline" method="GET" action="/admin/editor">
+    Create a new page:
+    <div class="input-group">
+        <input type="text"
+            name="file"
+            class="form-control ml-2"
+            placeholder="about.md">
+        <div class="input-group-append">
+            <button type="submit" class="btn btn-primary">Go</button>
+        </div>
+    </div>
+</form>
+
 {{ range .Data.FileTrees }}
     {{ if .UserRoot }}
         <h2>User Root</h2>
+
         <p>
             These are your custom web files that override those in the CoreRoot.
         </p>
