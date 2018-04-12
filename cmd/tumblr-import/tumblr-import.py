@@ -50,7 +50,7 @@ def main(tumblr, root, scheme):
     }
     log.info("Blog title: %s", SiteSettings["site"]["title"])
     log.info("Description: %s", SiteSettings["site"]["description"])
-    write_db(root, "app/settings", SiteSettings)
+    # write_db(root, "app/settings", SiteSettings)
 
     posts_total = r["posts-total"]  # n
     log.info("Total Posts: %d", posts_total)
@@ -62,6 +62,9 @@ def main(tumblr, root, scheme):
         posts_start = 0
 
     POST_ID = 0
+
+    # Unique Tumblr post IDs so no duplicates.
+    tumblr_posts = set()
 
     while posts_start >= 0:
         log.info("GET PAGE start=%d  num=%d\n", posts_start, per_page)
@@ -79,6 +82,10 @@ def main(tumblr, root, scheme):
             ))
             timestamp = datetime.fromtimestamp(post["unix-timestamp"])
             timestamp = timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            if post["id"] in tumblr_posts:
+                continue
+            tumblr_posts.add(post["id"])
 
             slug = post.get("slug")
             if not slug:
@@ -209,12 +216,15 @@ def _download_images(root, images):
 
     for i, url in enumerate(images):
         log.info("DOWNLOAD: %s", url)
+
         filename = url.rsplit("/", 1)[-1]
+        filename = "static/photos/"+filename
+        if os.path.isfile(os.path.join(root, filename)):
+            result.append("/"+filename)
+            continue
+
         r = requests.get(url)
         if r.ok:
-            filename = "static/photos/"+filename
-            if os.path.isfile(os.path.join(root, filename)):
-                continue
             with open(os.path.join(root, filename), "wb") as fh:
                 fh.write(r.content)
             result.append("/"+filename)

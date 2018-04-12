@@ -10,16 +10,24 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kirsle/blog/internal/forms"
+	"github.com/kirsle/blog/internal/log"
 	"github.com/kirsle/blog/internal/mail"
 	"github.com/kirsle/blog/internal/markdown"
-	"github.com/kirsle/blog/models/settings"
 	"github.com/kirsle/blog/internal/render"
 	"github.com/kirsle/blog/internal/responses"
+	"github.com/kirsle/blog/models/settings"
 )
 
 // Register attaches the contact URL to the app.
 func Register(r *mux.Router) {
 	r.HandleFunc("/contact", func(w http.ResponseWriter, r *http.Request) {
+		// Allow ?next= to redirect to other local pages.
+		nextURL := r.FormValue("next")
+		if nextURL != "" && nextURL[0] != '/' {
+			log.Error("/contact?next=: URL must be a local page beginning with /")
+			nextURL = ""
+		}
+
 		form := &forms.Contact{}
 		v := map[string]interface{}{
 			"Form": form,
@@ -42,6 +50,15 @@ func Register(r *mux.Router) {
 		if r.Method == http.MethodPost {
 			form.ParseForm(r)
 			if err = form.Validate(); err != nil {
+				// If they're not from the /contact front-end, redirect them
+				// with the flash.
+				if len(nextURL) > 0 {
+					responses.FlashAndRedirect(w, r, nextURL, err.Error())
+					return
+				}
+
+				// Otherwise flash and let the /contact page render to retain
+				// their form fields so far.
 				responses.Flash(w, r, err.Error())
 			} else {
 				go mail.SendEmail(mail.Email{
@@ -72,7 +89,13 @@ func Register(r *mux.Router) {
 					))
 					fh.Close()
 				}
-				responses.FlashAndRedirect(w, r, "/contact", "Your message has been sent.")
+
+				if len(nextURL) > 0 {
+					responses.FlashAndRedirect(w, r, nextURL, "Your message has been sent.")
+				} else {
+					responses.FlashAndRedirect(w, r, "/contact", "Your message has been sent.")
+				}
+				return
 			}
 		}
 

@@ -10,10 +10,10 @@ import (
 	"github.com/kirsle/blog/internal/log"
 	"github.com/kirsle/blog/internal/middleware"
 	"github.com/kirsle/blog/internal/middleware/auth"
-	"github.com/kirsle/blog/models/settings"
-	"github.com/kirsle/blog/models/users"
 	"github.com/kirsle/blog/internal/sessions"
 	"github.com/kirsle/blog/internal/types"
+	"github.com/kirsle/blog/models/settings"
+	"github.com/kirsle/blog/models/users"
 )
 
 // Vars is an interface to implement by the templates to pass their own custom
@@ -23,6 +23,7 @@ type vars struct {
 	// Global, "constant" template variables.
 	SetupNeeded     bool
 	Title           string
+	Description     string
 	Path            string
 	TemplatePath    string // actual template file on disk
 	LoggedIn        bool
@@ -62,6 +63,7 @@ func Template(w io.Writer, r *http.Request, path string, data interface{}) error
 		Request:     r,
 		RequestTime: r.Context().Value(types.StartTimeKey).(time.Time),
 		Title:       s.Site.Title,
+		Description: s.Site.Description,
 		Path:        r.URL.Path,
 
 		Data: data,

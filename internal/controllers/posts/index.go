@@ -8,11 +8,11 @@ import (
 	"strconv"
 
 	"github.com/kirsle/blog/internal/log"
+	"github.com/kirsle/blog/internal/render"
+	"github.com/kirsle/blog/internal/types"
 	"github.com/kirsle/blog/models/comments"
 	"github.com/kirsle/blog/models/posts"
 	"github.com/kirsle/blog/models/users"
-	"github.com/kirsle/blog/internal/render"
-	"github.com/kirsle/blog/internal/types"
 )
 
 // partialIndex renders and returns the blog index partial.
@@ -28,9 +28,15 @@ func partialIndex(r *http.Request, tag, privacy string) template.HTML {
 	if page <= 0 {
 		page = 1
 	}
-	perPage := 5 // TODO: configurable
+	perPage := 10 // TODO: configurable
 	offset := (page - 1) * perPage
 	stop := offset + perPage
+
+	// Calculate page total.
+	var pages = int(len(pool) / perPage)
+	if pages == 0 {
+		pages = 1
+	}
 
 	// Handle pagination.
 	var previousPage, nextPage int
@@ -48,7 +54,7 @@ func partialIndex(r *http.Request, tag, privacy string) template.HTML {
 	var view []PostMeta
 	for i := offset; i < stop; i++ {
 		if i >= len(pool) {
-			continue
+			break
 		}
 		post, err := posts.Load(pool[i].ID)
 		if err != nil {
@@ -81,6 +87,8 @@ func partialIndex(r *http.Request, tag, privacy string) template.HTML {
 	v := map[string]interface{}{
 		"PreviousPage": previousPage,
 		"NextPage":     nextPage,
+		"Page":         page,
+		"Pages":        pages,
 		"View":         view,
 	}
 	render.Template(&output, r, "blog/index.partial", v)

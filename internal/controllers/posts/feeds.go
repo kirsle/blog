@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/gorilla/feeds"
+	"github.com/kirsle/blog/internal/responses"
 	"github.com/kirsle/blog/models/posts"
 	"github.com/kirsle/blog/models/settings"
 	"github.com/kirsle/blog/models/users"
-	"github.com/kirsle/blog/internal/responses"
 )
 
 func feedHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 			Description: post.Body + suffix,
 			Created:     p.Created,
 		})
-		if i >= 5 {
+		if i == 9 { // 10 -1
 			break
 		}
 	}
