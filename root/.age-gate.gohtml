@@ -1,0 +1,34 @@
+{{ define "title" }}Age Verification{{ end }}
+{{ define "content" }}
+<div class="card">
+    <div class="card-body">
+        <form action="/age-verify" method="POST">
+        <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+        <input type="hidden" name="next" value="{{ .Data.Next }}">
+        <input type="hidden" name="confirm" value="true">
+
+        <h1>Restricted Content</h1>
+
+        <p>
+            This website has been marked <abbr title="Not Safe For Work">NSFW</abbr>
+            by its owner. It may contain nudity or content not suited for users
+            under the age of 18.
+        </p>
+
+        <p>
+            To proceed, you must verify you are at least 18 years or older.
+        </p>
+
+        <button type="submit"
+            class="btn btn-danger">
+            I am 18 years or older
+        </button>
+        <a class="btn btn-primary"
+            href="https://duckduckgo.com/">
+            Get me out of here!
+        </a>
+
+        </form>
+    </div>
+</div>
+{{ end }}

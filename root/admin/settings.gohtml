@@ -50,6 +50,38 @@
                     placeholder="https://www.example.com/">
             </div>
 
+            <strong>NSFW Website</strong>
+            <div class="form-check mb-4">
+                <label class="form-check-label">
+                    <input type="checkbox"
+                        class="form-check-input"
+                        name="nsfw"
+                        value="true"
+                        {{ if .Site.NSFW }}checked{{ end }}>
+                        Website is NSFW. Requires an age verification to enter.
+                </label>
+            </div>
+
+            <h3>Blog Settings</h3>
+
+            <div class="form-group">
+                <label for="admin-email">Posts Per Page</label>
+                <input type="text"
+                    class="form-control"
+                    name="posts-per-page"
+                    value="{{ .Blog.PostsPerPage }}"
+                    placeholder="https://www.example.com/">
+            </div>
+
+            <div class="form-group">
+                <label for="admin-email">Posts Per (RSS) Feed</label>
+                <input type="text"
+                    class="form-control"
+                    name="posts-per-page"
+                    value="{{ .Blog.PostsPerFeed }}"
+                    placeholder="https://www.example.com/">
+            </div>
+
             <h3>Redis Cache</h3>
 
             <p>

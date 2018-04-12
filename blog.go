@@ -133,6 +133,7 @@ func (b *Blog) SetupHTTP() {
 		negroni.HandlerFunc(sessions.Middleware),
 		negroni.HandlerFunc(middleware.CSRF(responses.Forbidden)),
 		negroni.HandlerFunc(auth.Middleware),
+		negroni.HandlerFunc(middleware.AgeGate(authctl.AgeGate)),
 	)
 	n.UseHandler(r)
 

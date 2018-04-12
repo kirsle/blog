@@ -11,6 +11,9 @@ type Settings struct {
 	Description  string
 	AdminEmail   string
 	URL          string
+	NSFW         bool
+	PostsPerPage int
+	PostsPerFeed int
 	RedisEnabled bool
 	RedisHost    string
 	RedisPort    int

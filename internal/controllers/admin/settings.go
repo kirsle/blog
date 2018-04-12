@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/kirsle/blog/internal/forms"
-	"github.com/kirsle/blog/models/settings"
 	"github.com/kirsle/blog/internal/render"
 	"github.com/kirsle/blog/internal/responses"
+	"github.com/kirsle/blog/models/settings"
 )
 
 func settingsHandler(w http.ResponseWriter, r *http.Request) {
@@ -21,11 +21,16 @@ func settingsHandler(w http.ResponseWriter, r *http.Request) {
 		redisPort, _ := strconv.Atoi(r.FormValue("redis-port"))
 		redisDB, _ := strconv.Atoi(r.FormValue("redis-db"))
 		mailPort, _ := strconv.Atoi(r.FormValue("mail-port"))
+		ppp, _ := strconv.Atoi(r.FormValue("posts-per-page"))
+		ppf, _ := strconv.Atoi(r.FormValue("posts-per-feed"))
 		form := &forms.Settings{
 			Title:        r.FormValue("title"),
 			Description:  r.FormValue("description"),
 			AdminEmail:   r.FormValue("admin-email"),
 			URL:          r.FormValue("url"),
+			NSFW:         r.FormValue("nsfw") == "true",
+			PostsPerPage: ppp,
+			PostsPerFeed: ppf,
 			RedisEnabled: len(r.FormValue("redis-enabled")) > 0,
 			RedisHost:    r.FormValue("redis-host"),
 			RedisPort:    redisPort,
@@ -45,6 +50,9 @@ func settingsHandler(w http.ResponseWriter, r *http.Request) {
 		settings.Site.Description = form.Description
 		settings.Site.AdminEmail = form.AdminEmail
 		settings.Site.URL = form.URL
+		settings.Site.NSFW = form.NSFW
+		settings.Blog.PostsPerPage = form.PostsPerPage
+		settings.Blog.PostsPerFeed = form.PostsPerFeed
 		settings.Redis.Enabled = form.RedisEnabled
 		settings.Redis.Host = form.RedisHost
 		settings.Redis.Port = form.RedisPort

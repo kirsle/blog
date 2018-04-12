@@ -20,6 +20,7 @@ type Settings struct {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		AdminEmail  string `json:"adminEmail"`
+		NSFW        bool   `json:"nsfw"`
 		URL         string `json:"url"`
 	} `json:"site"`
 
@@ -28,6 +29,12 @@ type Settings struct {
 		SecretKey string `json:"secretKey"` // Session cookie secret key
 		HashCost  int    `json:"hashCost"`  // Bcrypt hash cost for passwords
 	} `json:"security"`
+
+	// Blog settings.
+	Blog struct {
+		PostsPerPage int `json:"postsPerPage"`
+		PostsPerFeed int `json:"postsPerFeed"`
+	} `json:"blog"`
 
 	// Redis settings for caching in JsonDB.
 	Redis struct {
@@ -58,6 +65,8 @@ func Defaults() *Settings {
 	s.Site.Title = "Untitled Site"
 	s.Security.HashCost = 14
 	s.Security.SecretKey = RandomKey()
+	s.Blog.PostsPerPage = 10
+	s.Blog.PostsPerFeed = 10
 	s.Redis.Host = "localhost"
 	s.Redis.Port = 6379
 	s.Redis.DB = 0
