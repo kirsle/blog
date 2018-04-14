@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -33,7 +34,7 @@ func partialIndex(r *http.Request, tag, privacy string) template.HTML {
 	stop := offset + perPage
 
 	// Calculate page total.
-	var pages = int(len(pool) / perPage)
+	var pages = math.Ceil(float64(len(pool)) / float64(perPage))
 	if pages == 0 {
 		pages = 1
 	}
