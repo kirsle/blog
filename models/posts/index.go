@@ -2,7 +2,6 @@ package posts
 
 import (
 	"sort"
-	"strings"
 )
 
 // UpdateIndex updates a post's metadata in the blog index.
@@ -16,7 +15,8 @@ func UpdateIndex(p *Post) error {
 
 // Index caches high level metadata about the blog's contents for fast access.
 type Index struct {
-	Posts map[int]Post `json:"posts"`
+	Posts     map[int]Post   `json:"posts"`
+	Fragments map[string]int `json:"fragments"`
 }
 
 // GetIndex loads the index, or rebuilds it first if it doesn't exist.
@@ -33,7 +33,8 @@ func GetIndex() (*Index, error) {
 // RebuildIndex builds the index from scratch.
 func RebuildIndex() (*Index, error) {
 	idx := &Index{
-		Posts: map[int]Post{},
+		Posts:     map[int]Post{},
+		Fragments: map[string]int{},
 	}
 	entries, _ := DB.List("blog/posts")
 	for _, doc := range entries {
@@ -61,6 +62,7 @@ func (idx *Index) Update(p *Post) error {
 		Created:  p.Created,
 		Updated:  p.Updated,
 	}
+	idx.Fragments[p.Fragment] = p.ID
 	err := DB.Commit("blog/index", idx)
 	return err
 }
@@ -77,6 +79,7 @@ type Tag struct {
 	Count int
 }
 
+// ByPopularity sort type.
 type ByPopularity []Tag
 
 func (s ByPopularity) Len() int {
@@ -122,35 +125,4 @@ func (idx *Index) Tags() ([]Tag, error) {
 	sort.Sort(sort.Reverse(ByPopularity(tags)))
 
 	return tags, nil
-}
-
-// CleanupFragments to clean up old URL fragments.
-func CleanupFragments() error {
-	idx, err := GetIndex()
-	if err != nil {
-		return err
-	}
-	return idx.CleanupFragments()
-}
-
-// CleanupFragments to clean up old URL fragments.
-func (idx *Index) CleanupFragments() error {
-	// Keep track of the active URL fragments so we can clean up orphans.
-	fragments := map[string]struct{}{}
-	for _, p := range idx.Posts {
-		fragments[p.Fragment] = struct{}{}
-	}
-
-	// Clean up unused fragments.
-	byFragment, err := DB.List("blog/fragments")
-	for _, doc := range byFragment {
-		parts := strings.Split(doc, "/")
-		fragment := parts[len(parts)-1]
-		if _, ok := fragments[fragment]; !ok {
-			log.Debug("RebuildIndex() clean up old fragment '%s'", fragment)
-			DB.Delete(doc)
-		}
-	}
-
-	return err
 }

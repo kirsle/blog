@@ -38,11 +38,6 @@ type Post struct {
 	Updated        time.Time `json:"updated"`
 }
 
-// ByFragment maps a blog post by its URL fragment.
-type ByFragment struct {
-	ID int `json:"id"`
-}
-
 // New creates a blank post with sensible defaults.
 func New() *Post {
 	return &Post{
@@ -97,14 +92,16 @@ func Load(id int) (*Post, error) {
 
 // LoadFragment loads a blog entry by its URL fragment.
 func LoadFragment(fragment string) (*Post, error) {
-	f := ByFragment{}
-	err := DB.Get("blog/fragments/"+fragment, &f)
+	idx, err := GetIndex()
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := Load(f.ID)
-	return p, err
+	if postID, ok := idx.Fragments[fragment]; ok {
+		return Load(postID)
+	}
+
+	return nil, errors.New("no such fragment found")
 }
 
 // Save the blog post.
@@ -166,16 +163,12 @@ func (p *Post) Save() error {
 
 	// Write the post.
 	DB.Commit(fmt.Sprintf("blog/posts/%d", p.ID), p)
-	DB.Commit(fmt.Sprintf("blog/fragments/%s", p.Fragment), ByFragment{p.ID})
 
 	// Update the index cache.
 	err := UpdateIndex(p)
 	if err != nil {
 		return fmt.Errorf("RebuildIndex() error: %v", err)
 	}
-
-	// Clean up fragments.
-	CleanupFragments()
 
 	return nil
 }
