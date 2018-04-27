@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	gorilla "github.com/gorilla/sessions"
 	"github.com/kirsle/blog/internal/log"
 	"github.com/kirsle/blog/internal/middleware"
 	"github.com/kirsle/blog/internal/middleware/auth"
@@ -35,6 +36,7 @@ type vars struct {
 	RequestDuration time.Duration
 
 	// Common template variables.
+	Session *gorilla.Session
 	Message string
 	Flashes []string
 	Error   error
@@ -77,6 +79,7 @@ func Template(w io.Writer, r *http.Request, path string, data interface{}) error
 	if rw, ok := w.(http.ResponseWriter); ok {
 		rw.Header().Set("Content-Type", "text/html; encoding=UTF-8")
 		session := sessions.Get(r)
+		v.Session = session
 
 		// Flashed messages.
 		if flashes := session.Flashes(); len(flashes) > 0 {
