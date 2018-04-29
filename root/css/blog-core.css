@@ -29,3 +29,9 @@ a.blog-title {
     font-size: smaller;
     margin-bottom: 1rem;
 }
+
+/* Address formatting */
+address {
+    white-space: pre-line;
+    font-style: italic;
+}

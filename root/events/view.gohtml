@@ -1,0 +1,51 @@
+{{ define "title" }}{{ .Data.event.Title }}{{ end }}
+{{ define "content" }}
+
+{{ with .Data.event }}
+    <h1>{{ .Title }}</h1>
+
+    <div class="row mb-4">
+        <div class="col-12 col-md-8">
+            {{ TrustedMarkdown .Description }}
+        </div>
+        <div class="col-12 col-md-4">
+            {{ if .Location }}
+                <h4>Location</h4>
+                <address class="mb-4"><a href="https://maps.google.com/?q={{ NewlinesToSpace .Location }}" target="_blank">{{ .Location }}</a></address>
+            {{ end }}
+
+            <h4>Time</h4>
+            <abbr title="{{ .StartTime.Format "Mon Jan 2 15:04:05 2006" }}">
+                {{ .StartTime.Format "January 2 @ 3:04 PM" }}
+            </abbr>
+            {{ if not .EndTime.IsZero }}
+                to<br>
+                <abbr title="{{ .EndTime.Format "Mon Jan 2 15:04:05 2006" }}">
+                    {{ if .AllDay }}
+                        {{ .EndTime.Format "January 2" }}
+                    {{ else }}
+                        {{ .EndTime.Format "January 2 @ 3:04 PM" }}
+                    {{ end }}
+                </abbr>
+            {{ end }}
+
+            <h4 class="mt-4">Invited</h4>
+        </div>
+    </div>
+{{ end }}
+
+{{ if and .LoggedIn .CurrentUser.Admin }}
+    <div class="alert alert-danger">
+        <a href="/e/admin/edit?id={{ .Data.event.ID }}"
+            class="btn btn-primary">edit event</a>
+        <a href="/e/admin/invite?id={{ .Data.event.ID }}"
+            class="btn btn-success">invite people</a>
+    </div>
+{{ end }}
+
+<h2 id="comments" class="mt-4">Comments</h2>
+
+{{ $idStr := printf "%d" .Data.event.ID }}
+{{ RenderComments .Request .Data.event.Title "event" $idStr }}
+
+{{ end }}

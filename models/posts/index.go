@@ -70,6 +70,7 @@ func (idx *Index) Update(p *Post) error {
 // Delete a blog's entry from the index.
 func (idx *Index) Delete(p *Post) error {
 	delete(idx.Posts, p.ID)
+	delete(idx.Fragments, p.Fragment)
 	return DB.Commit("blog/index", idx)
 }
 

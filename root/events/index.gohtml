@@ -1,0 +1,18 @@
+{{ define "title" }}Events{{ end }}
+{{ define "content" }}
+
+<h1>Events</h1>
+
+<p>
+    <a href="/e/admin/edit" class="btn btn-success">New Event</a>
+</p>
+
+<ul>
+    {{ range .Data.events }}
+    <li>
+        <a href="/e/{{ .Fragment }}">{{ .Title }}</a> {{ .StartTime.Format "Jan 1 2006 @ 3:04:05 PM" }}
+    </li>
+    {{ end }}
+</ul>
+
+{{ end }}
