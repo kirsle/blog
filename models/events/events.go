@@ -39,21 +39,6 @@ type Event struct {
 	Updated     time.Time `json:"updated"`
 }
 
-// RSVP tracks invitations and confirmations to events.
-type RSVP struct {
-	// If the user was invited by an admin, they will have a ContactID and
-	// not much else. Users who signed up themselves from an OpenSignup event
-	// will have the metadata filled in instead.
-	ContactID int       `json:"contactId"`
-	Notified  bool      `json:"notified"`
-	Name      string    `json:"name,omitempty"`
-	Status    string    `json:"status,omitempty"` // invited, going, maybe, not going
-	Email     string    `json:"email,omitempty"`
-	SMS       string    `json:"sms,omitempty"`
-	Created   time.Time `json:"created"`
-	Updated   time.Time `json:"updated"`
-}
-
 // New creates a blank event with sensible defaults.
 func New() *Event {
 	return &Event{

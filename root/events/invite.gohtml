@@ -1,108 +1,179 @@
 {{ define "title" }}Invite People to {{ .Data.event.Title }}{{ end }}
 {{ define "content" }}
-<form action="/e/admin/edit" method="POST">
-    <input type="hidden" name="_csrf" value="{{ .CSRF }}">
 
-    {{ $e := .Data.event }}
-    <h1>Invite <em>{{ $e.Title }}</em></h1>
+{{ $e := .Data.event }}
+{{ $cl := .Data.contacts }}
 
-    <div class="card mb-4">
-        <div class="card-header">Contact List</div>
-        <div class="card-body">
-            <div class="row" style="max-height: 500px; overflow: auto">
-                <div class="col-6">
-                    <h4>Invited</h4>
+<h1>Invite <em>{{ $e.Title }}</em></h1>
 
-                    <ul class="list-unstyled">
-                        <li>
-                            <strong>John Doe</strong><br>
-                            <span class="text-muted">name@example.com</span>
-                        </li>
-                        <li>
-                            <strong>John Doe</strong><br>
-                            <span class="text-muted">name@example.com</span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col-6">
-                    <h4>Available</h4>
+<div class="card mb-4">
+    <div class="card-header">Contact List</div>
+    <div class="card-body">
+        <div class="row" style="max-height: 500px; overflow: auto">
+            <div class="col-6">
+                <h4>Invited</h4>
 
-                    <ul class="list-unstyled">
-                        <li>
-                            <label class="d-block alert alert-info">
-                                    <input type="checkbox" name="invite" value="1">
-                                    <strong>John Doe</strong><br>
-                                    <span class="text-muted">name@example.com</span>
-                            </label>
-                        </li>
-                        <li>
-                            <label class="d-block alert alert-info">
-                                    <input type="checkbox" name="invite" value="1">
-                                    <strong>John Doe</strong><br>
-                                    <span class="text-muted">name@example.com</span>
-                            </label>
-                        </li>
-                    </ul>
+                <ul class="list-unstyled">
+                    {{ range .Data.invited }}
+                    <li>
+                        <div class="alert alert-info">
+                            {{ if .Contact }}
+                                <strong>{{ .Contact.Name }}</strong>
+                            {{ else }}
+                                <strong>{{ .Name }}</strong>
+                            {{ end }}
+                            <ul class="list-inline">
+                                {{ if .Contact }}
+                                    {{ if .Contact.Email }}
+                                    <li class="list-inline-item">
+                                        <a href="mailto:{{ .Contact.Email }}">{{ .Contact.Email }}</a>
+                                    </li>
+                                    {{ end }}
+                                    {{ if .Contact.SMS }}
+                                    <li class="list-inline-item">
+                                        <a href="tel:{{ .Contact.SMS }}">{{ .Contact.SMS }}</a>
+                                    </li>
+                                    {{ end }}
+                                {{ else }}
+                                    {{ if .Email }}
+                                    <li class="list-inline-item">
+                                        <a href="mailto:{{ .Email }}">{{ .Email }}</a>
+                                    </li>
+                                    {{ end }}
+                                    {{ if .SMS }}
+                                    <li class="list-inline-item">
+                                        <a href="tel:{{ .SMS }}">{{ .SMS }}</a>
+                                    </li>
+                                    {{ end }}
+                                {{ end }}
+                            </ul>
+                        </div>
+                    </li>
+                    {{ end }}
+                    <li>
+                        <strong>John Doe</strong><br>
+                        <span class="text-muted">name@example.com</span>
+                    </li>
+                    <li>
+                        <strong>John Doe</strong><br>
+                        <span class="text-muted">name@example.com</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-6">
+                <h4>Available</h4>
 
-                    <button type="submit"
-                        name="action" value="send-invite"
-                        class="btn btn-primary">Send Invites</button>
-                </div>
+                <form action="/e/admin/invite/{{ $e.ID }}" method="POST">
+                <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+
+                <ul class="list-unstyled">
+                    {{ range $cl.Contacts }}
+                    {{ if not (index $.Data.invitedMap .ID) }}
+                    <li>
+                        <label class="d-block alert alert-info">
+                            <input type="checkbox" name="invite" value="{{ .ID }}">
+                            <strong>{{ .Name }}</strong>
+                            <ul class="list-inline">
+                                {{ if .Email }}
+                                    <li class="list-inline-item">
+                                        <a href="mailto:{{ .Email }}">{{ .Email }}</a>
+                                    </li>
+                                {{ end }}
+                                {{ if .SMS }}
+                                    <li class="list-inline-item">
+                                        <a href="tel:{{ .SMS }}">{{ .SMS }}</a>
+                                    </li>
+                                {{ end }}
+                            </ul>
+                        </label>
+                    </li>
+                    {{ end }}
+                    {{ end }}
+                    <li>
+                        <label class="d-block alert alert-info">
+                                <input type="checkbox" name="invite" value="1">
+                                <strong>John Doe</strong><br>
+                                <span class="text-muted">name@example.com</span>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="d-block alert alert-info">
+                                <input type="checkbox" name="invite" value="1">
+                                <strong>John Doe</strong><br>
+                                <span class="text-muted">name@example.com</span>
+                        </label>
+                    </li>
+                </ul>
+
+                <button type="submit"
+                    name="action" value="send-invite"
+                    class="btn btn-primary">Send Invites</button>
+                <a href="/admin/contacts"
+                    class="btn btn-secondary">Manage Contacts</a>
+
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="card">
-        <div class="card-header">Invite New People</div>
-        <div class="card-body">
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="first_name">First name:</label>
-                    <input type="text"
-                        name="first_name"
-                        id="first_name"
-                        class="form-control"
-                        placeholder="First name">
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="last_name">Last name:</label>
-                    <input type="text"
-                        name="last_name"
-                        id="last_name"
-                        class="form-control"
-                        placeholder="Last name">
-                </div>
+<div class="card">
+    <div class="card-header">Invite New People</div>
+    <div class="card-body">
+        <form action="/e/admin/invite/{{ $e.ID }}" method="POST">
+        <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="first_name">First name:</label>
+                <input type="text"
+                    name="first_name"
+                    id="first_name"
+                    class="form-control"
+                    placeholder="First name">
             </div>
-
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="email">E-mail:</label>
-                    <input type="email"
-                        name="email"
-                        id="email"
-                        class="form-control"
-                        placeholder="name@example.com">
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="last_name">SMS Number:</label>
-                    <input type="text"
-                        name="sms"
-                        id="sms"
-                        class="form-control"
-                        placeholder="800-555-1234">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <button type="button"
-                    class="btn btn-primary">Send Invite</button>
+            <div class="form-group col-md-6">
+                <label for="last_name">Last name:</label>
+                <input type="text"
+                    name="last_name"
+                    id="last_name"
+                    class="form-control"
+                    placeholder="Last name">
             </div>
         </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="email">E-mail:</label>
+                <input type="email"
+                    name="email"
+                    id="email"
+                    class="form-control"
+                    placeholder="name@example.com">
+            </div>
+            <div class="form-group col-md-6">
+                <label for="last_name">SMS Number:</label>
+                <input type="text"
+                    name="sms"
+                    id="sms"
+                    class="form-control"
+                    placeholder="800-555-1234">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <button type="submit"
+                name="action"
+                value="new-contact"
+                class="btn btn-primary">Send Invite</button>
+        </div>
+
+        </form>
     </div>
+</div>
 
-    <h2>Invited</h2>
+<h2>Invited</h2>
 
-    To Do
-</form>
+To Do
 
 {{ end }}

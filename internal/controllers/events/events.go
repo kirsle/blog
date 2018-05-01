@@ -18,7 +18,7 @@ func Register(r *mux.Router, loginError http.HandlerFunc) {
 	// Login-required routers.
 	loginRouter := mux.NewRouter()
 	loginRouter.HandleFunc("/e/admin/edit", editHandler)
-	loginRouter.HandleFunc("/e/admin/invite", inviteHandler)
+	loginRouter.HandleFunc("/e/admin/invite/{id}", inviteHandler)
 	loginRouter.HandleFunc("/e/admin/", indexHandler)
 	r.PathPrefix("/e/admin").Handler(
 		negroni.New(

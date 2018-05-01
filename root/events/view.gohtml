@@ -38,7 +38,7 @@
     <div class="alert alert-danger">
         <a href="/e/admin/edit?id={{ .Data.event.ID }}"
             class="btn btn-primary">edit event</a>
-        <a href="/e/admin/invite?id={{ .Data.event.ID }}"
+        <a href="/e/admin/invite/{{ .Data.event.ID }}"
             class="btn btn-success">invite people</a>
     </div>
 {{ end }}

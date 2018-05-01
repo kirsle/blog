@@ -26,6 +26,7 @@ import (
 	"github.com/kirsle/blog/jsondb/caches/null"
 	"github.com/kirsle/blog/jsondb/caches/redis"
 	"github.com/kirsle/blog/models/comments"
+	"github.com/kirsle/blog/models/contacts"
 	"github.com/kirsle/blog/models/events"
 	"github.com/kirsle/blog/models/posts"
 	"github.com/kirsle/blog/models/settings"
@@ -90,6 +91,7 @@ func (b *Blog) Configure() {
 	posts.DB = b.DB
 	users.DB = b.DB
 	comments.DB = b.DB
+	contacts.DB = b.DB
 	events.DB = b.DB
 
 	// Redis cache?
