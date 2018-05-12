@@ -1,6 +1,7 @@
 package events
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/kirsle/blog/internal/middleware/auth"
 	"github.com/kirsle/blog/internal/render"
 	"github.com/kirsle/blog/internal/responses"
+	"github.com/kirsle/blog/models/comments"
 	"github.com/kirsle/blog/models/events"
 	"github.com/urfave/negroni"
 )
@@ -85,11 +87,47 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Count up the RSVP statuses, and also look for the authed contact's RSVP.
+	var (
+		countGoing    int
+		countMaybe    int
+		countNotGoing int
+		countInvited  int
+	)
+	for _, rsvp := range event.RSVP {
+		if authedContact.ID != 0 && rsvp.ContactID == authedContact.ID {
+			v["authedRVSP"] = rsvp
+		}
+
+		switch rsvp.Status {
+		case events.StatusGoing:
+			countGoing++
+		case events.StatusMaybe:
+			countMaybe++
+		case events.StatusNotGoing:
+			countNotGoing++
+		default:
+			countInvited++
+		}
+	}
+	v["countGoing"] = countGoing
+	v["countMaybe"] = countMaybe
+	v["countNotGoing"] = countNotGoing
+	v["countInvited"] = countInvited
+
 	// If we're posting, are we RSVPing?
 	if r.Method == http.MethodPost {
 		action := r.PostFormValue("action")
 		switch action {
 		case "answer-rsvp":
+			// Subscribe them to the comment thread on this page if we have an email.
+			if authedContact.Email != "" {
+				thread := fmt.Sprintf("event-%d", event.ID)
+				log.Info("events.viewHandler: subscribe email %s to thread %s", authedContact.Email, thread)
+				ml := comments.LoadMailingList()
+				ml.Subscribe(thread, authedContact.Email)
+			}
+
 			answer := r.PostFormValue("submit")
 			for _, rsvp := range event.RSVP {
 				if rsvp.ContactID == authedContact.ID {

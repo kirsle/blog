@@ -49,6 +49,8 @@ func contactAuthHandler(w http.ResponseWriter, r *http.Request) {
 	// Authenticate the contact in the session.
 	session := sessions.Get(r)
 	session.Values["contact-id"] = c.ID
+	session.Values["c.name"] = c.Name() // comment form values auto-filled nicely
+	session.Values["c.email"] = c.Email
 	err = session.Save(r, w)
 	if err != nil {
 		log.Error("contactAuthHandler: save session error: %s", err)
