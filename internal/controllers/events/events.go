@@ -29,6 +29,8 @@ func Register(r *mux.Router, loginError http.HandlerFunc) {
 
 	// Public routes
 	r.HandleFunc("/e/{fragment}", viewHandler)
+	r.HandleFunc("/c/logout", contactLogoutHandler)
+	r.HandleFunc("/c/{secret}", contactAuthHandler)
 }
 
 // Admin index to view all events.
@@ -60,10 +62,50 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Template variables.
+	v := map[string]interface{}{
+		"event":      event,
+		"authedRSVP": events.RSVP{},
+	}
+
+	// Sort the guest list.
 	sort.Sort(events.ByName(event.RSVP))
 
-	v := map[string]interface{}{
-		"event": event,
+	// Is the browser session authenticated as a contact?
+	authedContact, err := AuthedContact(r)
+	if err == nil {
+		v["authedContact"] = authedContact
+
+		// Do they have an RSVP?
+		for _, rsvp := range event.RSVP {
+			if rsvp.ContactID == authedContact.ID {
+				v["authedRSVP"] = rsvp
+				break
+			}
+		}
 	}
+
+	// If we're posting, are we RSVPing?
+	if r.Method == http.MethodPost {
+		action := r.PostFormValue("action")
+		switch action {
+		case "answer-rsvp":
+			answer := r.PostFormValue("submit")
+			for _, rsvp := range event.RSVP {
+				if rsvp.ContactID == authedContact.ID {
+					log.Info("Mark RSVP status %s for contact %s", answer, authedContact.Name())
+					rsvp.Status = answer
+					rsvp.Save()
+					responses.FlashAndReload(w, r, "You have confirmed '%s' for your RSVP.", answer)
+					return
+				}
+			}
+		default:
+			responses.FlashAndReload(w, r, "Invalid form action.")
+		}
+		responses.FlashAndReload(w, r, "Unknown error.")
+		return
+	}
+
 	render.Template(w, r, "events/view", v)
 }

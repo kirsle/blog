@@ -2,6 +2,7 @@ package contacts
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -65,6 +66,7 @@ func (c *Contact) presave() {
 			secret[i] = letters[rand.Intn(len(letters))]
 		}
 		c.Secret = string(secret)
+		fmt.Printf("contact.presave: secret=%s", string(secret))
 	}
 }
 
@@ -108,6 +110,13 @@ func GetEmail(email string) (Contact, error) {
 func GetSMS(number string) (Contact, error) {
 	contact := Contact{}
 	err := DB.Where("sms = ?", number).First(&contact).Error
+	return contact, err
+}
+
+// GetBySecret queries a contact by their secret.
+func GetBySecret(secret string) (Contact, error) {
+	contact := Contact{}
+	err := DB.Where("secret = ?", secret).First(&contact).Error
 	return contact, err
 }
 

@@ -30,7 +30,7 @@
 					To view the details and RSVP, visit the link below:
 					<br><br>
 
-					<a href="{{ .Data.URL }}" target="_blank">{{ .Data.URL }}</a>
+					<a href="{{ or .Data.ClaimURL .Data.URL }}" target="_blank">{{ or .Data.ClaimURL .Data.URL }}</a>
 				</font>
 			</td>
 		</tr>

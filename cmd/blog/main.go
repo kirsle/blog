@@ -7,7 +7,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 
 	_ "github.com/jinzhu/gorm/dialects/sqlite" // SQLite DB
 	"github.com/kirsle/blog"
@@ -32,6 +34,7 @@ func init() {
 	flag.BoolVar(&fDebug, "d", false, "Debug mode (alias)")
 	flag.StringVar(&fAddress, "address", ":8000", "Bind address")
 	flag.StringVar(&fAddress, "a", ":8000", "Bind address (alias)")
+	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {

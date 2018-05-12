@@ -4,6 +4,7 @@ package blog
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/gorilla/mux"
@@ -56,6 +57,10 @@ type Blog struct {
 
 // New initializes the Blog application.
 func New(documentRoot, userRoot string) *Blog {
+	// Initialize the SQLite database.
+	if _, err := os.Stat(filepath.Join(userRoot, ".private")); os.IsNotExist(err) {
+		os.MkdirAll(filepath.Join(userRoot, ".private"), 0755)
+	}
 	db, err := gorm.Open("sqlite3", filepath.Join(userRoot, ".private", "database.sqlite"))
 	if err != nil {
 		panic(err)

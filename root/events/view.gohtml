@@ -1,7 +1,32 @@
 {{ define "title" }}{{ .Data.event.Title }}{{ end }}
 {{ define "content" }}
 
+{{ $authedContact := .Data.authedContact }}
+{{ $authedRSVP := .Data.authedRSVP }}
+
 {{ with .Data.event }}
+    {{ if and $authedContact $authedRSVP.ID }}
+        <div class="row mb-4">
+            <div class="col-8">
+                <p>
+                    <strong>{{ $authedContact.Name }}</strong>, you have been invited to...
+                </p>
+            </div>
+            <div class="col-4 text-right">
+                <form name="rsvpAnswerForm" action="/e/{{ .Fragment }}" method="POST">
+                <input type="hidden" name="_csrf" value="{{ $.CSRF }}">
+                <input type="hidden" name="action" value="answer-rsvp">
+                <div class="btn-group">
+                    <button type="submit" name="submit" value="going" class="btn{{ if eq $authedRSVP.Status "going" }} btn-success{{ end }}">Going</button>
+                    <button type="submit" name="submit" value="maybe" class="btn{{ if eq $authedRSVP.Status "maybe" }} btn-warning{{ end }}">Maybe</button>
+                    <button type="submit" name="submit" value="not going" class="btn{{ if eq $authedRSVP.Status "not going" }} btn-danger{{ end }}">Not Going</button>
+                </div>
+                <p class="small">
+                    [<a href="/c/logout?next={{ $.Request.URL.Path }}">not {{ $authedContact.Name }}?</a>]
+                </p>
+            </div>
+        </div>
+    {{ end }}
     <h1>{{ .Title }}</h1>
 
     <div class="row mb-4">
@@ -36,9 +61,9 @@
                     {{ range .RSVP }}
                     <li class="list-group-item
                         {{ if eq .Status "invited" }}bg-light
-                        {{ else if eq .Status "going"}}bg-success text-light
-                        {{ else if eq .Status "not going"}}bg-danger text-light
-                        {{ else if eq .Status "maybe"}}bg-warning text-light{{ end }}">
+                        {{ else if eq .Status "going"}}border-success
+                        {{ else if eq .Status "not going"}}border-danger
+                        {{ else if eq .Status "maybe"}}border-warning{{ end }}">
                         {{ if .Contact }}
                             <strong>{{ .Contact.Name }}</strong>
                         {{ else }}
@@ -51,7 +76,7 @@
                             {{ if not .Notified }}
                                 <span class="badge badge-warning">not notified</span>
                             {{ end }}
-                            <ul class="list-inline">
+                            <ul class="list-inline small">
                                 {{ if .Contact }}
                                     {{ if .Contact.Email }}
                                     <li class="list-inline-item text-muted">

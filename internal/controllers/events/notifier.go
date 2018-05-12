@@ -16,15 +16,26 @@ func notifyUser(ev *events.Event, rsvp events.RSVP) {
 	)
 	s, _ := settings.Load()
 
+	// Can we get an "auto-login" link?
+	var claimURL string
+	if rsvp.Contact.Secret != "" {
+		claimURL = fmt.Sprintf("%s/c/%s?e=%d",
+			strings.Trim(s.Site.URL, "/"),
+			rsvp.Contact.Secret,
+			ev.ID,
+		)
+	}
+
 	// Do they have... an e-mail address?
 	if email != "" {
-		mail.SendEmail(mail.Email{
+		go mail.SendEmail(mail.Email{
 			To:      email,
 			Subject: fmt.Sprintf("Invitation to: %s", ev.Title),
 			Data: map[string]interface{}{
-				"RSVP":  rsvp,
-				"Event": ev,
-				"URL":   strings.Trim(s.Site.URL, "/") + "/e/" + ev.Fragment,
+				"RSVP":     rsvp,
+				"Event":    ev,
+				"URL":      strings.Trim(s.Site.URL, "/") + "/e/" + ev.Fragment,
+				"ClaimURL": claimURL,
 			},
 			Template: ".email/event-invite.gohtml",
 		})
@@ -32,7 +43,7 @@ func notifyUser(ev *events.Event, rsvp events.RSVP) {
 
 	// An SMS number?
 	if sms != "" {
-
+		// TODO: Twilio
 	}
 
 	rsvp.Notified = true
