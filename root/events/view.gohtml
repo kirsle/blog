@@ -30,6 +30,57 @@
             {{ end }}
 
             <h4 class="mt-4">Invited</h4>
+
+            <div style="max-height: 500px; overflow: auto">
+                <ul class="list-group">
+                    {{ range .RSVP }}
+                    <li class="list-group-item
+                        {{ if eq .Status "invited" }}bg-light
+                        {{ else if eq .Status "going"}}bg-success text-light
+                        {{ else if eq .Status "not going"}}bg-danger text-light
+                        {{ else if eq .Status "maybe"}}bg-warning text-light{{ end }}">
+                        {{ if .Contact }}
+                            <strong>{{ .Contact.Name }}</strong>
+                        {{ else }}
+                            <strong>{{ .Name }}</strong>
+                        {{ end }}
+                        <br>
+                        {{ .Status }}
+
+                        {{ if and $.LoggedIn $.CurrentUser.Admin }}
+                            {{ if not .Notified }}
+                                <span class="badge badge-warning">not notified</span>
+                            {{ end }}
+                            <ul class="list-inline">
+                                {{ if .Contact }}
+                                    {{ if .Contact.Email }}
+                                    <li class="list-inline-item text-muted">
+                                        <a href="mailto:{{ .Contact.Email }}">{{ .Contact.Email }}</a>
+                                    </li>
+                                    {{ end }}
+                                    {{ if .Contact.SMS }}
+                                    <li class="list-inline-item text-muted">
+                                        <a href="tel:{{ .Contact.SMS }}">{{ .Contact.SMS }}</a>
+                                    </li>
+                                    {{ end }}
+                                {{ else }}
+                                    {{ if .Email }}
+                                    <li class="list-inline-item text-muted">
+                                        <a href="mailto:{{ .Email }}">{{ .Email }}</a>
+                                    </li>
+                                    {{ end }}
+                                    {{ if .SMS }}
+                                    <li class="list-inline-item text-muted">
+                                        <a href="tel:{{ .SMS }}">{{ .SMS }}</a>
+                                    </li>
+                                    {{ end }}
+                                {{ end }}
+                            </ul>
+                        {{ end }}
+                    </li>
+                    {{ end }}
+                </ul>
+            </div>
         </div>
     </div>
 {{ end }}

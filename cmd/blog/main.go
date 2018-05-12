@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 
+	_ "github.com/jinzhu/gorm/dialects/sqlite" // SQLite DB
 	"github.com/kirsle/blog"
 	"github.com/kirsle/blog/jsondb"
 )

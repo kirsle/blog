@@ -2,17 +2,23 @@ package contacts
 
 import (
 	"errors"
+	"math/rand"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
-	"github.com/kirsle/blog/jsondb"
+	"github.com/jinzhu/gorm"
 	"github.com/kirsle/golog"
 )
 
-// DB is a reference to the parent app's JsonDB object.
-var DB *jsondb.DB
+// DB is a reference to the parent app's gorm DB.
+var DB *gorm.DB
+
+// UseDB registers the DB from the root app.
+func UseDB(db *gorm.DB) {
+	DB = db
+	DB.AutoMigrate(&Contact{})
+}
 
 var log *golog.Logger
 
@@ -20,15 +26,10 @@ func init() {
 	log = golog.GetLogger("blog")
 }
 
-// Contacts is an address book of users who have been invited to events.
-type Contacts struct {
-	Serial   int        `json:"serial"`
-	Contacts []*Contact `json:"contacts"`
-}
-
 // Contact is an individual contact in the address book.
 type Contact struct {
 	ID        int       `json:"id"`
+	Secret    string    `json:"secret" gorm:"unique"` // their lazy insecure login token
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Email     string    `json:"email"`
@@ -38,79 +39,80 @@ type Contact struct {
 	Updated   time.Time `json:"updated"`
 }
 
+// Contacts is the plurality of all contacts.
+type Contacts []Contact
+
 // NewContact initializes a new contact entry.
-func NewContact() *Contact {
-	return &Contact{}
+func NewContact() Contact {
+	return Contact{}
 }
 
-// Load the singleton contact list.
-func Load() (*Contacts, error) {
-	c := &Contacts{
-		Serial:   1,
-		Contacts: []*Contact{},
-	}
-	if DB.Exists("contacts/address-book") {
-		err := DB.Get("contacts/address-book", &c)
-		return c, err
-	}
-	return c, nil
-}
-
-// Add a new contact.
-func (cl *Contacts) Add(c *Contact) {
-	if c.ID == 0 {
-		c.ID = cl.Serial
-		cl.Serial++
-	}
-
+// pre-save checks.
+func (c *Contact) presave() {
 	if c.Created.IsZero() {
 		c.Created = time.Now().UTC()
 	}
 	if c.Updated.IsZero() {
 		c.Updated = time.Now().UTC()
 	}
-	cl.Contacts = append(cl.Contacts, c)
-}
 
-// Save the contact list.
-func (cl *Contacts) Save() error {
-	sort.Sort(ByName(cl.Contacts))
-	return DB.Commit("contacts/address-book", cl)
-}
-
-// GetID queries a contact by its ID number.
-func (cl *Contacts) GetID(id int) (*Contact, error) {
-	for _, c := range cl.Contacts {
-		if c.ID == id {
-			return c, nil
+	if c.Secret == "" {
+		// Make a random ID.
+		n := 8
+		var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		secret := make([]rune, n)
+		for i := range secret {
+			secret[i] = letters[rand.Intn(len(letters))]
 		}
+		c.Secret = string(secret)
 	}
-	return nil, errors.New("not found")
+}
+
+// Add a new contact.
+func Add(c *Contact) error {
+	c.presave()
+
+	log.Error("contacts.Add: %+v", c)
+
+	return DB.Create(&c).Error
+}
+
+// All contacts from the database alphabetically sorted.
+func All() (Contacts, error) {
+	result := Contacts{}
+	err := DB.Order("last_name").Find(&result).Error
+	return result, err
+}
+
+// Get a contact by ID.
+func Get(id int) (Contact, error) {
+	contact := Contact{}
+	err := DB.First(&contact, id).Error
+	return contact, err
+}
+
+// Save the contact.
+func (c Contact) Save() error {
+	c.presave()
+	return DB.Update(&c).Error
 }
 
 // GetEmail queries a contact by email address.
-func (cl *Contacts) GetEmail(email string) (*Contact, error) {
-	email = strings.ToLower(email)
-	for _, c := range cl.Contacts {
-		if c.Email == email {
-			return c, nil
-		}
-	}
-	return nil, errors.New("not found")
+func GetEmail(email string) (Contact, error) {
+	contact := Contact{}
+	err := DB.Where("email = ?", email).First(&contact).Error
+	return contact, err
 }
 
 // GetSMS queries a contact by SMS number.
-func (cl *Contacts) GetSMS(number string) (*Contact, error) {
-	for _, c := range cl.Contacts {
-		if c.SMS == number {
-			return c, nil
-		}
-	}
-	return nil, errors.New("not found")
+func GetSMS(number string) (Contact, error) {
+	contact := Contact{}
+	err := DB.Where("sms = ?", number).First(&contact).Error
+	return contact, err
 }
 
 // Name returns a friendly name for the contact.
-func (c *Contact) Name() string {
+func (c Contact) Name() string {
 	var parts []string
 	if c.FirstName != "" {
 		parts = append(parts, c.FirstName)
@@ -137,7 +139,7 @@ func (c *Contact) ParseForm(r *http.Request) {
 }
 
 // Validate the contact form.
-func (c *Contact) Validate() error {
+func (c Contact) Validate() error {
 	if c.Email == "" && c.SMS == "" {
 		return errors.New("email or sms number required")
 	}
@@ -145,17 +147,14 @@ func (c *Contact) Validate() error {
 		return errors.New("first or last name required")
 	}
 
-	// Get the address book out.
-	addr, _ := Load()
-
 	// Check for uniqueness of email and SMS.
 	if c.Email != "" {
-		if _, err := addr.GetEmail(c.Email); err == nil {
+		if _, err := GetEmail(c.Email); err == nil {
 			return errors.New("email address already exists")
 		}
 	}
 	if c.SMS != "" {
-		if _, err := addr.GetSMS(c.SMS); err == nil {
+		if _, err := GetSMS(c.SMS); err == nil {
 			return errors.New("sms number already exists")
 		}
 	}

@@ -33,17 +33,9 @@ func Register(r *mux.Router, loginError http.HandlerFunc) {
 
 // Admin index to view all events.
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	result := []*events.Event{}
-	docs, _ := events.DB.List("events/by-id")
-	for _, doc := range docs {
-		ev := &events.Event{}
-		err := events.DB.Get(doc, &ev)
-		if err != nil {
-			log.Error("error reading %s: %s", doc, err)
-			continue
-		}
-
-		result = append(result, ev)
+	result, err := events.All()
+	if err != nil {
+		log.Error("error listing all events: %s", err)
 	}
 
 	sort.Sort(sort.Reverse(events.ByDate(result)))
@@ -67,6 +59,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		responses.FlashAndRedirect(w, r, "/", "Event Not Found")
 		return
 	}
+
+	sort.Sort(events.ByName(event.RSVP))
 
 	v := map[string]interface{}{
 		"event": event,

@@ -10,9 +10,9 @@ import (
 
 	"github.com/kirsle/blog/internal/log"
 	"github.com/kirsle/blog/internal/markdown"
+	"github.com/kirsle/blog/internal/render"
 	"github.com/kirsle/blog/models/comments"
 	"github.com/kirsle/blog/models/settings"
-	"github.com/kirsle/blog/internal/render"
 	"github.com/microcosm-cc/bluemonday"
 	gomail "gopkg.in/gomail.v2"
 )
@@ -32,9 +32,13 @@ type Email struct {
 // SendEmail sends an email.
 func SendEmail(email Email) {
 	s, _ := settings.Load()
+
+	// Suppress sending any mail when no mail settings are configured, but go
+	// through the motions -- great for local dev.
+	var doNotMail bool
 	if !s.Mail.Enabled || s.Mail.Host == "" || s.Mail.Port == 0 || s.Mail.Sender == "" {
 		log.Info("Suppressing email: not completely configured")
-		return
+		doNotMail = true
 	}
 
 	// Resolve the template.
@@ -71,6 +75,13 @@ func SendEmail(email Email) {
 		lines = append(lines, line)
 	}
 	plaintext := strings.Join(lines, "\n\n")
+
+	// If we're not actually going to send the mail, this is a good place to stop.
+	if doNotMail {
+		log.Info("Not going to send an email.")
+		log.Debug("The message was going to be:\n%s", plaintext)
+		return
+	}
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", fmt.Sprintf("%s <%s>", s.Site.Title, s.Mail.Sender))

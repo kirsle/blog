@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 	"github.com/kirsle/blog/internal/controllers/admin"
 	"github.com/kirsle/blog/internal/controllers/authctl"
 	commentctl "github.com/kirsle/blog/internal/controllers/comments"
@@ -44,8 +45,9 @@ type Blog struct {
 	DocumentRoot string
 	UserRoot     string
 
-	DB    *jsondb.DB
-	Cache caches.Cacher
+	db     *gorm.DB
+	jsonDB *jsondb.DB
+	Cache  caches.Cacher
 
 	// Web app objects.
 	n *negroni.Negroni // Negroni middleware manager
@@ -54,10 +56,16 @@ type Blog struct {
 
 // New initializes the Blog application.
 func New(documentRoot, userRoot string) *Blog {
+	db, err := gorm.Open("sqlite3", filepath.Join(userRoot, ".private", "database.sqlite"))
+	if err != nil {
+		panic(err)
+	}
+
 	return &Blog{
 		DocumentRoot: documentRoot,
 		UserRoot:     userRoot,
-		DB:           jsondb.New(filepath.Join(userRoot, ".private")),
+		db:           db,
+		jsonDB:       jsondb.New(filepath.Join(userRoot, ".private")),
 		Cache:        null.New(),
 	}
 }
@@ -72,8 +80,11 @@ func (b *Blog) Run(address string) {
 // Configure initializes (or reloads) the blog's configuration, and binds the
 // settings in sub-packages.
 func (b *Blog) Configure() {
+	if b.Debug {
+		b.db.LogMode(true)
+	}
 	// Load the site config, or start with defaults if not found.
-	settings.DB = b.DB
+	settings.DB = b.jsonDB
 	config, err := settings.Load()
 	if err != nil {
 		config = settings.Defaults()
@@ -88,11 +99,11 @@ func (b *Blog) Configure() {
 	users.HashCost = config.Security.HashCost
 
 	// Initialize the rest of the models.
-	posts.DB = b.DB
-	users.DB = b.DB
-	comments.DB = b.DB
-	contacts.DB = b.DB
-	events.DB = b.DB
+	contacts.UseDB(b.db)
+	events.UseDB(b.db)
+	posts.DB = b.jsonDB
+	users.DB = b.jsonDB
+	comments.DB = b.jsonDB
 
 	// Redis cache?
 	if config.Redis.Enabled {
@@ -107,7 +118,7 @@ func (b *Blog) Configure() {
 			log.Error("Redis init error: %s", err.Error())
 		} else {
 			b.Cache = cache
-			b.DB.Cache = cache
+			b.jsonDB.Cache = cache
 			markdown.Cache = cache
 		}
 	}

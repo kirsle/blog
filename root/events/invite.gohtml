@@ -6,58 +6,73 @@
 
 <h1>Invite <em>{{ $e.Title }}</em></h1>
 
+<p>
+    <a href="/e/{{ $e.Fragment }}" class="btn btn-success">Back to Event Page</a>
+</p>
+
 <div class="card mb-4">
     <div class="card-header">Contact List</div>
     <div class="card-body">
+        <p>
+            First, choose who you want to invite to your event. Adding them to the
+            "Invited" list does <strong>not</strong> immediately send them an e-mail;
+            the <span class="badge badge-warning">not notified</span> badge means they
+            have <em>yet</em> to receive an e-mail or SMS message.
+        </p>
+        <p>
+            To invite a <em>new</em> contact, scroll down to <a href="#new-contact">Invite New People</a>.
+        </p>
+
         <div class="row" style="max-height: 500px; overflow: auto">
             <div class="col-6">
                 <h4>Invited</h4>
 
                 <ul class="list-unstyled">
-                    {{ range .Data.invited }}
+                    {{ range $index, $rsvp := .Data.invited }}
                     <li>
                         <div class="alert alert-info">
-                            {{ if .Contact }}
-                                <strong>{{ .Contact.Name }}</strong>
+                            <form method="POST" action="/e/admin/invite/{{ $e.ID }}">
+                            <input type="hidden" name="_csrf" value="{{ $.CSRF }}">
+                            <input type="hidden" name="action" value="revoke-invite">
+                            <input type="hidden" name="index" value="{{ $rsvp.ID }}">
+                            {{ if $rsvp.Contact }}
+                                <strong>{{ $rsvp.Contact.Name }}</strong>
                             {{ else }}
-                                <strong>{{ .Name }}</strong>
+                                <strong>{{ $rsvp.Name }}</strong>
                             {{ end }}
+                            <button type="submit" class="btn btn-sm btn-danger">delete</button>
+                            </form>
                             <ul class="list-inline">
                                 {{ if .Contact }}
                                     {{ if .Contact.Email }}
-                                    <li class="list-inline-item">
-                                        <a href="mailto:{{ .Contact.Email }}">{{ .Contact.Email }}</a>
+                                    <li class="list-inline-item text-muted">
+                                        {{ .Contact.Email }}
                                     </li>
                                     {{ end }}
                                     {{ if .Contact.SMS }}
-                                    <li class="list-inline-item">
-                                        <a href="tel:{{ .Contact.SMS }}">{{ .Contact.SMS }}</a>
+                                    <li class="list-inline-item text-muted">
+                                        {{ .Contact.SMS }}
                                     </li>
                                     {{ end }}
                                 {{ else }}
                                     {{ if .Email }}
-                                    <li class="list-inline-item">
-                                        <a href="mailto:{{ .Email }}">{{ .Email }}</a>
+                                    <li class="list-inline-item text-muted">
+                                        {{ .Email }}
                                     </li>
                                     {{ end }}
                                     {{ if .SMS }}
-                                    <li class="list-inline-item">
-                                        <a href="tel:{{ .SMS }}">{{ .SMS }}</a>
+                                    <li class="list-inline-item text-muted">
+                                        {{ .SMS }}
                                     </li>
                                     {{ end }}
                                 {{ end }}
                             </ul>
+                            {{ if not .Notified }}
+                                <div class="badge badge-warning">not notified</div>
+                            {{ end }}
                         </div>
                     </li>
                     {{ end }}
-                    <li>
-                        <strong>John Doe</strong><br>
-                        <span class="text-muted">name@example.com</span>
-                    </li>
-                    <li>
-                        <strong>John Doe</strong><br>
-                        <span class="text-muted">name@example.com</span>
-                    </li>
                 </ul>
             </div>
             <div class="col-6">
@@ -67,7 +82,7 @@
                 <input type="hidden" name="_csrf" value="{{ .CSRF }}">
 
                 <ul class="list-unstyled">
-                    {{ range $cl.Contacts }}
+                    {{ range $cl }}
                     {{ if not (index $.Data.invitedMap .ID) }}
                     <li>
                         <label class="d-block alert alert-info">
@@ -75,13 +90,13 @@
                             <strong>{{ .Name }}</strong>
                             <ul class="list-inline">
                                 {{ if .Email }}
-                                    <li class="list-inline-item">
-                                        <a href="mailto:{{ .Email }}">{{ .Email }}</a>
+                                    <li class="list-inline-item text-muted">
+                                        {{ .Email }}
                                     </li>
                                 {{ end }}
                                 {{ if .SMS }}
-                                    <li class="list-inline-item">
-                                        <a href="tel:{{ .SMS }}">{{ .SMS }}</a>
+                                    <li class="list-inline-item text-muted">
+                                        {{ .SMS }}
                                     </li>
                                 {{ end }}
                             </ul>
@@ -107,7 +122,7 @@
 
                 <button type="submit"
                     name="action" value="send-invite"
-                    class="btn btn-primary">Send Invites</button>
+                    class="btn btn-primary">Invite Contact</button>
                 <a href="/admin/contacts"
                     class="btn btn-secondary">Manage Contacts</a>
 
@@ -117,11 +132,16 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card mb-4" id="new-contact">
     <div class="card-header">Invite New People</div>
     <div class="card-body">
         <form action="/e/admin/invite/{{ $e.ID }}" method="POST">
         <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+
+        <p>
+            Fill in this form to create a new Contact and add them to the
+            Invited list above.
+        </p>
 
         <div class="form-row">
             <div class="form-group col-md-6">
@@ -165,9 +185,31 @@
             <button type="submit"
                 name="action"
                 value="new-contact"
-                class="btn btn-primary">Send Invite</button>
+                class="btn btn-success">Create Contact & Invite</button>
         </div>
 
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">Send Notifications</div>
+    <div class="card-body">
+        <form method="POST" action="/e/admin/invite/{{ $e.ID }}">
+        <input type="hidden" name="_csrf" value="{{ $.CSRF }}">
+        <input type="hidden" name="action" value="notify">
+
+        <p>
+            To send out notifications (e-mail and/or SMS) to all of the invited contacts,
+            click the button below.
+        </p>
+        <p>
+            This will only notify contacts who have not yet received a notification.
+            That is, those with the <span class="badge badge-warning">not notified</span>
+            badge above.
+        </p>
+
+        <button type="submit" class="btn btn-danger">Notify Invited Contacts</button>
         </form>
     </div>
 </div>

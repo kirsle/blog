@@ -9,12 +9,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kirsle/blog/jsondb"
+	"github.com/jinzhu/gorm"
+	"github.com/kirsle/blog/models/contacts"
 	"github.com/kirsle/golog"
 )
 
-// DB is a reference to the parent app's JsonDB object.
-var DB *jsondb.DB
+// DB is a reference to the parent app's gorm DB.
+var DB *gorm.DB
+
+// UseDB registers the DB from the root app.
+func UseDB(db *gorm.DB) {
+	DB = db
+	DB.AutoMigrate(&Event{}, &RSVP{})
+	DB.Model(&Event{}).Related(&RSVP{})
+	DB.Model(&RSVP{}).Related(&contacts.Contact{})
+}
 
 var log *golog.Logger
 
@@ -45,6 +54,13 @@ func New() *Event {
 		StartTime: time.Now().UTC(),
 		EndTime:   time.Now().UTC(),
 	}
+}
+
+// All returns all the events.
+func All() ([]*Event, error) {
+	result := []*Event{}
+	err := DB.Order("start_time desc").Find(&result).Error
+	return result, err
 }
 
 // ParseForm populates the event from form values.
@@ -98,35 +114,27 @@ func (ev *Event) Validate() error {
 	return nil
 }
 
+// joinedLoad loads the Event with its RSVPs and their Contacts.
+func joinedLoad() *gorm.DB {
+	return DB.Preload("RSVP").Preload("RSVP.Contact")
+}
+
 // Load an event by its ID.
 func Load(id int) (*Event, error) {
 	ev := &Event{}
-	err := DB.Get(fmt.Sprintf("events/by-id/%d", id), &ev)
+	err := joinedLoad().First(ev, id).Error
 	return ev, err
 }
 
 // LoadFragment loads an event by its URL fragment.
 func LoadFragment(fragment string) (*Event, error) {
-	idx, err := GetIndex()
-	if err != nil {
-		return nil, err
-	}
-
-	if id, ok := idx.Fragments[fragment]; ok {
-		ev, err := Load(id)
-		return ev, err
-	}
-
-	return nil, errors.New("fragment not found")
+	ev := &Event{}
+	err := joinedLoad().Where("fragment = ?", fragment).First(ev).Error
+	return ev, err
 }
 
 // Save the event.
 func (ev *Event) Save() error {
-	// Editing an existing event?
-	if ev.ID == 0 {
-		ev.ID = nextID()
-	}
-
 	// Generate a URL fragment if needed.
 	if ev.Fragment == "" {
 		fragment := strings.ToLower(ev.Title)
@@ -173,15 +181,7 @@ func (ev *Event) Save() error {
 	}
 
 	// Write the event.
-	DB.Commit(fmt.Sprintf("events/by-id/%d", ev.ID), ev)
-
-	// Update the index cache.
-	err := UpdateIndex(ev)
-	if err != nil {
-		return fmt.Errorf("UpdateIndex() error: %v", err)
-	}
-
-	return nil
+	return DB.Save(&ev).Error
 }
 
 // Delete an event.
@@ -191,38 +191,5 @@ func (ev *Event) Delete() error {
 	}
 
 	// Delete the DB files.
-	DB.Delete(fmt.Sprintf("events/by-id/%d", ev.ID))
-
-	// Remove it from the index.
-	idx, err := GetIndex()
-	if err != nil {
-		return fmt.Errorf("GetIndex error: %v", err)
-	}
-	return idx.Delete(ev)
-}
-
-// getNextID gets the next blog post ID.
-func nextID() int {
-	// Highest ID seen so far.
-	var highest int
-
-	events, err := DB.List("events/by-id")
-	if err != nil {
-		return 1
-	}
-
-	for _, doc := range events {
-		fields := strings.Split(doc, "/")
-		id, err := strconv.Atoi(fields[len(fields)-1])
-		if err != nil {
-			continue
-		}
-
-		if id > highest {
-			highest = id
-		}
-	}
-
-	// Return the highest +1
-	return highest + 1
+	return DB.Delete(ev).Error
 }

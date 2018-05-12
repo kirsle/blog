@@ -28,9 +28,6 @@ func inviteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the address book.
-	addr, _ := contacts.Load()
-
 	// Handle POST requests.
 	if r.Method == http.MethodPost {
 		action := r.FormValue("action")
@@ -45,14 +42,18 @@ func inviteHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			addr.Add(c)
-			err = addr.Save()
+			err = contacts.Add(&c)
 			if err != nil {
 				responses.FlashAndReload(w, r, "Error when saving address book: %s", err)
 				return
 			}
 
-			responses.FlashAndReload(w, r, "Added %s to the address book!", c.Name())
+			err = event.InviteContactID(c.ID)
+			if err != nil {
+				responses.Flash(w, r, "Error: couldn't invite contact: %s", err)
+			}
+
+			responses.FlashAndReload(w, r, "Added %s to the address book and added to invite list!", c.Name())
 			return
 		case "send-invite":
 			log.Error("Send Invite!")
@@ -67,7 +68,8 @@ func inviteHandler(w http.ResponseWriter, r *http.Request) {
 			var warnings []string
 			for _, strID := range contactIDs {
 				id, _ := strconv.Atoi(strID)
-				err := event.InviteContactID(id)
+				err = event.InviteContactID(id)
+				log.Debug("Inviting contact ID %d: err=%s", id, err)
 				if err != nil {
 					warnings = append(warnings, err.Error())
 				}
@@ -77,10 +79,29 @@ func inviteHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			responses.FlashAndReload(w, r, "Invites sent!")
 			return
+		case "revoke-invite":
+			idx, _ := strconv.Atoi(r.FormValue("index"))
+			err := event.Uninvite(idx)
+			if err != nil {
+				responses.FlashAndReload(w, r, "Error deleting the invite: %s", err)
+				return
+			}
+			responses.FlashAndReload(w, r, "Invite revoked!")
+			return
+		case "notify":
+			// Notify all the invited users!
+			for _, rsvp := range event.RSVP {
+				if !rsvp.Notified || true {
+					log.Info("Notify RSVP %s about Event %s", rsvp.GetName(), event.Title)
+					notifyUser(event, rsvp)
+				}
+			}
+			responses.FlashAndReload(w, r, "Notification emails and SMS messages sent out!")
+			return
 		}
 	}
 
-	invited, err := event.Invited()
+	invited := event.RSVP
 	if err != nil {
 		log.Error("error getting event.Invited: %s", err)
 	}
@@ -93,11 +114,16 @@ func inviteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	allContacts, err := contacts.All()
+	if err != nil {
+		log.Error("contacts.All() error: %s", err)
+	}
+
 	v := map[string]interface{}{
 		"event":      event,
 		"invited":    invited,
 		"invitedMap": invitedMap,
-		"contacts":   addr,
+		"contacts":   allContacts,
 	}
 	render.Template(w, r, "events/invite", v)
 }
