@@ -16,17 +16,13 @@
 #
 #    # later...
 #    docker start blog
-FROM fedora:latest
-
-RUN dnf -y update
-RUN dnf -y install golang make
+FROM golang:1.10
 
 WORKDIR /go/src/github.com/kirsle/blog
-ADD . /go/src/github.com/kirsle/blog
+COPY . .
 
-ENV GOPATH /go
-RUN go get ./...
-RUN make build
+RUN go get -d -v ./...
+RUN go install -v ./...
 
 EXPOSE 80
-CMD ["/go/src/github.com/kirsle/blog/bin/blog", "-a", ":80", "/data/www"]
+CMD ["blog", "-a", ":80", "/data/www"]

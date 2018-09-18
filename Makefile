@@ -47,4 +47,4 @@ docker.build:
 # `make docker.run` to run the docker image
 .PHONY: docker.run
 docker.run:
-	docker run --rm --name blog_debug -p 8000:80 -v $(CURDIR)/user-root:/data/www blog
+	docker run --rm --name blog_debug -p 8000:80 -v "$(CURDIR)/user-root:/data/www:z" blog

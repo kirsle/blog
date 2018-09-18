@@ -77,6 +77,13 @@ make run
 This app includes a Dockerfile. Type `make docker.build` to build the
 Docker image.
 
+The Docker container uses the user document root at `/data/www`
+
+```bash
+docker build -t blog .
+docker run --rm --name blog_debug -p 8000:80 -v $(CURDIR)/user-root:/data/www blog
+```
+
 ### Quick Start
 
 ```bash
