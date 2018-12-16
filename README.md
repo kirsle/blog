@@ -4,6 +4,8 @@ This is a web blog and personal homepage engine written in Go. It includes a
 full-featured web blog (with tags, archive views, etc.) and can serve static
 web assets, Go HTML templates and Markdown pages.
 
+# Features
+
 ## Zero Configuration
 
 Blog is designed to be extremely easy to run: just give it a path to your
@@ -15,6 +17,8 @@ blog $HOME/www
 
 See `blog -h` for command line arguments, for example to make it listen on a
 different port number.
+
+The blog database is kept on disk as JSON files under the document root.
 
 ## Dual Template System
 
@@ -67,6 +71,40 @@ make run
 # Or to run it manually with go-reload to provide custom options:
 ./go-reload cmd/blog/main.go [options] [/path/to/document/root]
 ```
+
+## Docker
+
+This app includes a Dockerfile. Type `make docker.build` to build the
+Docker image.
+
+The Docker container uses the user document root at `/data/www`
+
+```bash
+docker build -t blog .
+docker run --rm --name blog_debug -p 8000:80 -v $(CURDIR)/user-root:/data/www blog
+```
+
+### Quick Start
+
+```bash
+make docker.build
+make docker.run
+```
+
+### Docker Image
+
+* Exposes port 80 for the web server
+* User document root is mounted at `/data/www`
+
+So to run the Docker image and have it listen on `localhost:8000` on the
+host and bind the user document root to `/home/user/www`:
+
+```bash
+docker run -p 8000:80 -v /home/user/www:/data/www blog
+```
+
+You may also run `make docker.run` to run the Docker image on port 8000 using
+the `./user-root` directory
 
 ## Recommendation: Redis
 

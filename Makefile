@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 VERSION=$(shell grep -e 'Version' blog.go | head -n 1 | cut -d '"' -f 2)
 BUILD=$(shell git describe --always)
-CURDIR=$(shell curdir)
+CURDIR=$(shell pwd)
 
 # Inject the build version (commit hash) into the executable.
 LDFLAGS := -ldflags "-X main.Build=$(BUILD)"
@@ -38,3 +38,13 @@ clean:
 .PHONY: hardclean
 hardclean: clean
 	rm -rf root/.private
+
+# `make docker.build` to build the Docker image
+.PHONY: docker.build
+docker.build:
+	docker build -t blog .
+
+# `make docker.run` to run the docker image
+.PHONY: docker.run
+docker.run:
+	docker run --rm --name blog_debug -p 8000:80 -v "$(CURDIR)/user-root:/data/www:z" blog

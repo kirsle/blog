@@ -38,5 +38,11 @@ func (c Contact) Validate() error {
 	if len(c.Message) == 0 {
 		return errors.New("message is required")
 	}
+
+	// Spam bot traps.
+	if c.Trap1 != "" || c.Trap2 != "http://" {
+		return errors.New("message can't be delivered")
+	}
+
 	return nil
 }
