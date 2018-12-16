@@ -13,7 +13,6 @@ import (
 	"github.com/kirsle/blog/internal/controllers/authctl"
 	commentctl "github.com/kirsle/blog/internal/controllers/comments"
 	"github.com/kirsle/blog/internal/controllers/contact"
-	eventctl "github.com/kirsle/blog/internal/controllers/events"
 	postctl "github.com/kirsle/blog/internal/controllers/posts"
 	"github.com/kirsle/blog/internal/controllers/setup"
 	"github.com/kirsle/blog/internal/log"
@@ -28,8 +27,6 @@ import (
 	"github.com/kirsle/blog/jsondb/caches/null"
 	"github.com/kirsle/blog/jsondb/caches/redis"
 	"github.com/kirsle/blog/models/comments"
-	"github.com/kirsle/blog/models/contacts"
-	"github.com/kirsle/blog/models/events"
 	"github.com/kirsle/blog/models/posts"
 	"github.com/kirsle/blog/models/settings"
 	"github.com/kirsle/blog/models/users"
@@ -104,8 +101,6 @@ func (b *Blog) Configure() {
 	users.HashCost = config.Security.HashCost
 
 	// Initialize the rest of the models.
-	contacts.UseDB(b.db)
-	events.UseDB(b.db)
 	posts.DB = b.jsonDB
 	users.DB = b.jsonDB
 	comments.DB = b.jsonDB
@@ -141,7 +136,6 @@ func (b *Blog) SetupHTTP() {
 	contact.Register(r)
 	postctl.Register(r, b.MustLogin)
 	commentctl.Register(r)
-	eventctl.Register(r, b.MustLogin)
 
 	// GitHub Flavored Markdown CSS.
 	r.Handle("/css/gfm.css", http.StripPrefix("/css", http.FileServer(gfmstyle.Assets)))
