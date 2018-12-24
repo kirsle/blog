@@ -8,60 +8,100 @@
     </div>
 {{ end }}
 
-<form name="askme" method="POST" action="/ask">
-    <div class="card">
-        <div class="card-body">
-            <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+<div class="card">
+    <div class="card-body">
+        <form name="askme" method="POST" action="/ask">
+        <input type="hidden" name="_csrf" value="{{ .CSRF }}">
 
-            <div class="form-group row">
-                <div class="col-12 col-md-2">
-                    <label class="col-form-label" for="name">Name:</label>
-                </div>
-                <div class="col-12 col-md-10">
-                    <input type="text" class="form-control" id="name" name="name" value="{{ .Data.Q.Name }}" placeholder="Anonymous">
-                </div>
+        <div class="form-group row">
+            <div class="col-12 col-md-2">
+                <label class="col-form-label" for="name">Name:</label>
             </div>
-            <div class="form-group row">
-                <div class="col-12 col-md-2">
-                    <label class="col-form-label" for="email">Email:</label>
-                </div>
-                <div class="col-12 col-md-10">
-                    <div><input type="email" class="form-control" id="email" name="email" value="{{ .Data.Q.Email }}" placeholder="name@example.com"></div>
-                    <small>
-                        Optional. You will receive a one-time e-mail when I answer your question and no spam.
-                    </small>
-                </div>
-            </div>
-            <div class="form-group row">
-                <label class="col-12" for="question">Question: <small>(required)</small></label>
-                <textarea cols="80" rows="6"
-                    class="col-12 form-control"
-                    name="question"
-                    id="question"
-                    placeholder="Ask me anything">{{ .Data.Q.Question }}</textarea>
-            </div>
-
-            <div class="form-group row">
-                <div class="col">
-                    <button type="submit"
-                        name="submit"
-                        value="ask"
-                        class="btn btn-primary">Ask away!</button>
-                </div>
+            <div class="col-12 col-md-10">
+                <input type="text" class="form-control" id="name" name="name" value="{{ .Data.Q.Name }}" placeholder="Anonymous">
             </div>
         </div>
+        <div class="form-group row">
+            <div class="col-12 col-md-2">
+                <label class="col-form-label" for="email">Email:</label>
+            </div>
+            <div class="col-12 col-md-10">
+                <div><input type="email" class="form-control" id="email" name="email" value="{{ .Data.Q.Email }}" placeholder="name@example.com"></div>
+                <small>
+                    Optional. You will receive a one-time e-mail when I answer your question and no spam.
+                </small>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-12" for="question">Question: <small>(required)</small></label>
+            <textarea cols="80" rows="6"
+                class="col-12 form-control"
+                name="question"
+                id="question"
+                placeholder="Ask me anything">{{ .Data.Q.Question }}</textarea>
+        </div>
+
+        <div class="form-group row">
+            <div class="col">
+                <button type="submit"
+                    name="submit"
+                    value="ask"
+                    class="btn btn-primary">Ask away!</button>
+            </div>
+        </div>
+
+        </form>
     </div>
+</div>
 
-    {{ if .LoggedIn }}
-    <div class="card mt-4">
-        <div class="card-header">
-            Pending Questions
-        </div>
-        <div class="card-body">
-            xxx
-        </div>
+{{ if .LoggedIn }}
+<div class="card mt-4">
+    <div class="card-header">
+        Pending Questions
     </div>
-    {{ end }}
-</form>
+    <div class="card-body">
+        {{ if not .Data.Pending }}
+            <em>There are no pending questions.</em>
+        {{ end }}
+
+        {{ range .Data.Pending }}
+            <p>
+                <strong>{{ .Name }}</strong> {{ if .Email }}(with email){{ end }} asks:<br>
+                <small class="text-muted">
+                    <em>{{ .Created.Format "January 2, 2006 @ 15:04 MST" }}</em> by
+                </small>
+            </p>
+            <p>
+                {{ .Question }}
+            </p>
+
+            <div id="form-{{ .ID }}" class="dhtml-forms">
+                <form method="POST" action="/ask/answer">
+                    <input type="hidden" name="_csrf" value="{{ $.CSRF }}">
+                    <input type="hidden" name="id" value="{{ .ID }}">
+                    <textarea cols="80" rows="4"
+                        class="form-control"
+                        name="answer"
+                        placeholder="Answer (Markdown formatting allowed)"></textarea>
+
+                    <div class="btn-group mt-3">
+                        <button type="submit" name="submit" value="answer" class="btn btn-primary">
+                            Answer
+                        </button>
+                        <button type="submit" name="submit" value="delete" class="btn btn-danger">
+                            Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div id="button-{{ .ID }}" class="dhtml-buttons" style="display: none">
+                <button type="button" class="btn" id="show-{{ .ID }}" class="dhtml-show-button">Answer or delete</button>
+            </div>
+
+            <hr>
+        {{ end }}
+    </div>
+</div>
+{{ end }}
 
 {{ end }}

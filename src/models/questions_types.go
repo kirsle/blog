@@ -1,4 +1,4 @@
-package questions
+package models
 
 // Status of a Question.
 type Status string
