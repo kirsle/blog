@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kirsle/blog/internal/controllers/posts"
-	"github.com/kirsle/blog/internal/log"
-	"github.com/kirsle/blog/internal/markdown"
-	"github.com/kirsle/blog/internal/render"
-	"github.com/kirsle/blog/internal/responses"
+	"github.com/kirsle/blog/src/controllers/posts"
+	"github.com/kirsle/blog/src/log"
+	"github.com/kirsle/blog/src/markdown"
+	"github.com/kirsle/blog/src/render"
+	"github.com/kirsle/blog/src/responses"
 )
 
 // PageHandler is the catch-all route handler, for serving static web pages.

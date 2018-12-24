@@ -3,9 +3,9 @@ package blog
 import (
 	"net/http"
 
-	"github.com/kirsle/blog/internal/log"
-	"github.com/kirsle/blog/internal/render"
-	"github.com/kirsle/blog/internal/responses"
+	"github.com/kirsle/blog/src/log"
+	"github.com/kirsle/blog/src/render"
+	"github.com/kirsle/blog/src/responses"
 )
 
 // registerErrors loads the error handlers into the responses subpackage.
