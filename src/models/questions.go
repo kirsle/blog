@@ -1,4 +1,4 @@
-package questions
+package models
 
 import (
 	"errors"
@@ -6,25 +6,7 @@ import (
 	"net/mail"
 	"strconv"
 	"time"
-
-	"github.com/jinzhu/gorm"
-	"github.com/kirsle/golog"
 )
-
-// DB is a reference to the parent app's gorm DB.
-var DB *gorm.DB
-
-// UseDB registers the DB from the root app.
-func UseDB(db *gorm.DB) {
-	DB = db
-	DB.AutoMigrate(&Question{})
-}
-
-var log *golog.Logger
-
-func init() {
-	log = golog.GetLogger("blog")
-}
 
 // Question is a question asked of the blog owner.
 type Question struct {
@@ -37,17 +19,34 @@ type Question struct {
 	Updated  time.Time `json:"updated"`
 }
 
-// New creates a blank Question with sensible defaults.
-func New() *Question {
+// NewQuestion creates a blank Question with sensible defaults.
+func NewQuestion() *Question {
 	return &Question{
 		Status: Pending,
 	}
 }
 
-// All returns all the Questions.
-func All() ([]*Question, error) {
+// GetQuestion by its ID.
+func GetQuestion(id int) (*Question, error) {
+	result := &Question{}
+	err := DB.First(&result, id).Error
+	return result, err
+}
+
+// AllQuestions returns all the Questions.
+func AllQuestions() ([]*Question, error) {
 	result := []*Question{}
-	err := DB.Order("start_time desc").Find(&result).Error
+	err := DB.Order("created desc").Find(&result).Error
+	return result, err
+}
+
+// PendingQuestions returns pending questions in order of recency.
+func PendingQuestions(offset, limit int) ([]*Question, error) {
+	result := []*Question{}
+	err := DB.Where("status = ?", Pending).
+		Offset(offset).Limit(limit).
+		Order("created desc").
+		Find(&result).Error
 	return result, err
 }
 
