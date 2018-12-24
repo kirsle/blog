@@ -1,0 +1,67 @@
+{{ define "title" }}Ask Me Anything{{ end }}
+{{ define "content" }}
+<h1>Ask Me Anything</h1>
+
+{{ if .Data.Error }}
+    <div class="alert alert-danger">
+        Error: {{ .Data.Error }}
+    </div>
+{{ end }}
+
+<form name="askme" method="POST" action="/ask">
+    <div class="card">
+        <div class="card-body">
+            <input type="hidden" name="_csrf" value="{{ .CSRF }}">
+
+            <div class="form-group row">
+                <div class="col-12 col-md-2">
+                    <label class="col-form-label" for="name">Name:</label>
+                </div>
+                <div class="col-12 col-md-10">
+                    <input type="text" class="form-control" id="name" name="name" value="{{ .Data.Q.Name }}" placeholder="Anonymous">
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-12 col-md-2">
+                    <label class="col-form-label" for="email">Email:</label>
+                </div>
+                <div class="col-12 col-md-10">
+                    <div><input type="email" class="form-control" id="email" name="email" value="{{ .Data.Q.Email }}" placeholder="name@example.com"></div>
+                    <small>
+                        Optional. You will receive a one-time e-mail when I answer your question and no spam.
+                    </small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-12" for="question">Question: <small>(required)</small></label>
+                <textarea cols="80" rows="6"
+                    class="col-12 form-control"
+                    name="question"
+                    id="question"
+                    placeholder="Ask me anything">{{ .Data.Q.Question }}</textarea>
+            </div>
+
+            <div class="form-group row">
+                <div class="col">
+                    <button type="submit"
+                        name="submit"
+                        value="ask"
+                        class="btn btn-primary">Ask away!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{ if .LoggedIn }}
+    <div class="card mt-4">
+        <div class="card-header">
+            Pending Questions
+        </div>
+        <div class="card-body">
+            xxx
+        </div>
+    </div>
+    {{ end }}
+</form>
+
+{{ end }}

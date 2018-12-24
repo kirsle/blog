@@ -14,6 +14,7 @@ import (
 	commentctl "github.com/kirsle/blog/internal/controllers/comments"
 	"github.com/kirsle/blog/internal/controllers/contact"
 	postctl "github.com/kirsle/blog/internal/controllers/posts"
+	questionsctl "github.com/kirsle/blog/internal/controllers/questions"
 	"github.com/kirsle/blog/internal/controllers/setup"
 	"github.com/kirsle/blog/internal/log"
 	"github.com/kirsle/blog/internal/markdown"
@@ -28,6 +29,7 @@ import (
 	"github.com/kirsle/blog/jsondb/caches/redis"
 	"github.com/kirsle/blog/models/comments"
 	"github.com/kirsle/blog/models/posts"
+	"github.com/kirsle/blog/models/questions"
 	"github.com/kirsle/blog/models/settings"
 	"github.com/kirsle/blog/models/users"
 	"github.com/shurcooL/github_flavored_markdown/gfmstyle"
@@ -104,6 +106,7 @@ func (b *Blog) Configure() {
 	posts.DB = b.jsonDB
 	users.DB = b.jsonDB
 	comments.DB = b.jsonDB
+	questions.UseDB(b.db)
 
 	// Redis cache?
 	if config.Redis.Enabled {
@@ -136,6 +139,7 @@ func (b *Blog) SetupHTTP() {
 	contact.Register(r)
 	postctl.Register(r, b.MustLogin)
 	commentctl.Register(r)
+	questionsctl.Register(r)
 
 	// GitHub Flavored Markdown CSS.
 	r.Handle("/css/gfm.css", http.StripPrefix("/css", http.FileServer(gfmstyle.Assets)))
