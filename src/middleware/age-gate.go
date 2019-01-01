@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kirsle/blog/models/settings"
 	"github.com/kirsle/blog/src/responses"
 	"github.com/kirsle/blog/src/sessions"
-	"github.com/kirsle/blog/models/settings"
 	"github.com/urfave/negroni"
 )
 
@@ -48,8 +48,11 @@ func AgeGate(verifyHandler func(http.ResponseWriter, *http.Request)) negroni.Han
 		session := sessions.Get(r)
 		if val, _ := session.Values["age-ok"].(bool); !val {
 			// They haven't been verified.
-			responses.Redirect(w, "/age-verify?next="+r.URL.Path)
-			return
+			// Allow single-page loads with ?over18=1 in query parameter.
+			if r.FormValue("over18") == "" {
+				responses.Redirect(w, "/age-verify?next="+r.URL.Path)
+				return
+			}
 		}
 
 		next(w, r)
