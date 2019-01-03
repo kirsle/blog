@@ -19,6 +19,8 @@ var ageGateSuffixes = []string{
 	".jpg",
 	".jpeg",
 	".gif",
+	".mp4",
+	".webm",
 }
 
 // AgeGate is a middleware generator that does age verification for NSFW sites.
