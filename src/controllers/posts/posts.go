@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/kirsle/blog/models/posts"
+	"github.com/kirsle/blog/models/users"
 	"github.com/kirsle/blog/src/log"
 	"github.com/kirsle/blog/src/markdown"
 	"github.com/kirsle/blog/src/middleware/auth"
-	"github.com/kirsle/blog/models/posts"
-	"github.com/kirsle/blog/models/users"
 	"github.com/kirsle/blog/src/render"
 	"github.com/kirsle/blog/src/responses"
 	"github.com/kirsle/blog/src/types"
@@ -91,6 +91,7 @@ func RecentPosts(r *http.Request, tag, privacy string) []posts.Post {
 
 	// The set of blog posts to show.
 	var pool []posts.Post
+	var sticky []posts.Post // sticky pinned posts on top
 	for _, post := range idx.Posts {
 		// Limiting by a specific privacy setting? (drafts or private only)
 		if privacy != "" {
@@ -130,10 +131,20 @@ func RecentPosts(r *http.Request, tag, privacy string) []posts.Post {
 			}
 		}
 
-		pool = append(pool, post)
+		// Group them by sticky vs. not
+		if post.Sticky {
+			sticky = append(sticky, post)
+		} else {
+			pool = append(pool, post)
+		}
 	}
 
 	sort.Sort(sort.Reverse(posts.ByUpdated(pool)))
+	if len(sticky) > 0 {
+		sort.Sort(sort.Reverse(posts.ByUpdated(sticky)))
+		pool = append(sticky, pool...)
+	}
+
 	return pool
 }
 

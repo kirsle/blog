@@ -22,6 +22,9 @@ a.blog-title {
 .blog-meta .blog-draft {
     color: #909;
 }
+.blog-meta .blog-sticky {
+    color: #F0F;
+}
 
 /* Comment metadata line */
 .comment-meta {

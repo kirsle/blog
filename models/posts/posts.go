@@ -27,7 +27,7 @@ type Post struct {
 	ID             int       `json:"id"`
 	Title          string    `json:"title"`
 	Fragment       string    `json:"fragment"`
-	ContentType    string    `json:"contentType"`
+	ContentType    string    `json:"contentType,omitempty"`
 	AuthorID       int       `json:"author"`
 	Body           string    `json:"body,omitempty"`
 	Privacy        string    `json:"privacy"`

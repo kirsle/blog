@@ -53,14 +53,16 @@ func RebuildIndex() (*Index, error) {
 // Update a blog's entry in the index.
 func (idx *Index) Update(p *Post) error {
 	idx.Posts[p.ID] = Post{
-		ID:       p.ID,
-		Title:    p.Title,
-		Fragment: p.Fragment,
-		AuthorID: p.AuthorID,
-		Privacy:  p.Privacy,
-		Tags:     p.Tags,
-		Created:  p.Created,
-		Updated:  p.Updated,
+		ID:             p.ID,
+		Title:          p.Title,
+		Fragment:       p.Fragment,
+		AuthorID:       p.AuthorID,
+		Privacy:        p.Privacy,
+		Sticky:         p.Sticky,
+		EnableComments: p.EnableComments,
+		Tags:           p.Tags,
+		Created:        p.Created,
+		Updated:        p.Updated,
 	}
 	idx.Fragments[p.Fragment] = p.ID
 	err := DB.Commit("blog/index", idx)

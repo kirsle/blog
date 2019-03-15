@@ -16,6 +16,11 @@
     {{ else if eq $p.Privacy "unlisted" }}
         <span class="blog-unlisted">[unlisted]</span>
     {{ end }}
+
+    {{ if $p.Sticky }}
+        <span class="blog-sticky">[pinned]</span>
+    {{ end }}
+
     <span title="{{ $p.Created.Format "Jan 2 2006 @ 15:04:05 MST" }}">
         {{ $p.Created.Format "January 2, 2006" }}
     </span>
