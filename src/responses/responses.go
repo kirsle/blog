@@ -1,6 +1,7 @@
 package responses
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -38,4 +39,16 @@ func FlashAndReload(w http.ResponseWriter, r *http.Request, message string, args
 func Redirect(w http.ResponseWriter, location string) {
 	w.Header().Set("Location", location)
 	w.WriteHeader(http.StatusFound)
+}
+
+// JSON serializes a JSON response to the browser.
+func JSON(w http.ResponseWriter, statusCode int, v interface{}) {
+	w.Header().Set("Content-Type", "application/json; encoding=utf-8")
+	w.WriteHeader(statusCode)
+
+	serial, err := json.MarshalIndent(v, "", "\t")
+	if err != nil {
+		serial, _ = json.Marshal(err.Error())
+	}
+	w.Write(serial)
 }

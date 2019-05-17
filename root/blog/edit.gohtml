@@ -1,6 +1,6 @@
 {{ define "title" }}Update Blog{{ end }}
 {{ define "content" }}
-<form action="/blog/edit" method="POST">
+<form name="blog-edit" action="/blog/edit" method="POST">
 <input type="hidden" name="_csrf" value="{{ .CSRF }}">
 {{ if .Data.preview }}
 <div class="card mb-5">
@@ -98,9 +98,14 @@
                 id="body"
                 placeholder="Post body goes here">{{ .Body }}</textarea>
 
-            <button id="ace-toggle-button" type="button" class="mt-2 btn btn-sm btn-secondary">
-                Toggle Rich Code Editor
-            </button>
+            <div class="mt-2">
+                <button id="ace-toggle-button" type="button" class="btn btn-sm btn-secondary">
+                    Toggle Rich Code Editor
+                </button>
+
+                <span class="ml-2">Attach a file:</span>
+                <input type="file" id="attach-file-button" onChange="uploadFile()">
+            </div>
         </div>
 
         <div class="form-group">
@@ -206,6 +211,43 @@ var ACE;
 
     setSyntax("markdown");
 })();
+
+function uploadFile() {
+    let $input = document.querySelector("#attach-file-button");
+    let syntax = document.querySelector("input[name='content-type']:checked").value;
+    let file = $input.files[0];
+
+    var data = new FormData();
+    data.append("file", file);
+    data.append("_csrf", "{{ .CSRF }}");
+
+    fetch("/admin/upload", {
+        method: "POST",
+        body: data,
+        credentials: "same-origin",
+        cache: "no-cache"
+    }).then(resp => resp.json()).then(resp => {
+        if (!resp.success) {
+            window.alert(resp.error);
+            return;
+        }
+
+        let filename = resp.filename;
+        let uri = resp.uri;
+        let insert = `![${filename}](${uri})\n`;
+        if (syntax === "html") {
+            insert = `<img alt="${filename}" src="${uri}" class="portrait">\n`;
+        }
+
+        if (DISABLE_ACE_EDITOR) {
+            document.querySelector("#body").value += insert;
+        } else {
+            ACE.insert(insert);
+        }
+
+        $input.value = "";
+    });
+}
 
 function setSyntax(lang) {
     if (typeof(ACE) !== undefined) {

@@ -15,6 +15,7 @@ func Register(r *mux.Router, authErrorFunc http.HandlerFunc) {
 	adminRouter.HandleFunc("/", indexHandler)
 	adminRouter.HandleFunc("/settings", settingsHandler)
 	adminRouter.HandleFunc("/editor", editorHandler)
+	adminRouter.HandleFunc("/upload", uploadHandler)
 
 	r.PathPrefix("/admin").Handler(negroni.New(
 		negroni.HandlerFunc(auth.LoginRequired(authErrorFunc)),
