@@ -69,6 +69,10 @@
             name="body"
             class="form-control"
             required>{{ .Data.Body }}</textarea>
+
+        <button id="ace-toggle-button" type="button" class="mt-2 btn btn-sm btn-secondary">
+            Toggle Rich Code Editor
+        </button>
     </div>
 
     <p>
@@ -77,10 +81,15 @@
     </p>
 </form>
 
+<script src="/js/ace-toggle.js"></script>
 <script src="/js/ace-editor/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
 var ACE;
 (function() {
+    if (DISABLE_ACE_EDITOR) {
+        return;
+    }
+
     var editor = ace.edit("ace-editor");
     ACE = editor;
     document.querySelector("#editor-box").style.display = "block";
