@@ -27,6 +27,7 @@ var (
 var (
 	fDebug   bool
 	fAddress string
+	fVersion bool
 )
 
 func init() {
@@ -34,11 +35,17 @@ func init() {
 	flag.BoolVar(&fDebug, "d", false, "Debug mode (alias)")
 	flag.StringVar(&fAddress, "address", ":8000", "Bind address")
 	flag.StringVar(&fAddress, "a", ":8000", "Bind address (alias)")
+	flag.BoolVar(&fVersion, "v", false, "Print version info and quit")
 	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {
 	flag.Parse()
+	if fVersion {
+		fmt.Printf("This is blog v%s build %s", Version, Build)
+		return
+	}
+
 	userRoot := flag.Arg(0)
 	if userRoot == "" {
 		fmt.Printf("Need user root\n")
