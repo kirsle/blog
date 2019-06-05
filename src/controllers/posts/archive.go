@@ -5,8 +5,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kirsle/blog/src/middleware/auth"
 	"github.com/kirsle/blog/models/posts"
+	"github.com/kirsle/blog/src/middleware/auth"
 	"github.com/kirsle/blog/src/render"
 	"github.com/kirsle/blog/src/responses"
 	"github.com/kirsle/blog/src/types"
@@ -54,7 +54,8 @@ func archiveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v := map[string]interface{}{
-		"Archive": result,
+		"Archive":    result,
+		"Thumbnails": idx.Thumbnails,
 	}
 	render.Template(w, r, "blog/archive", v)
 }

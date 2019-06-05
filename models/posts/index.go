@@ -15,8 +15,9 @@ func UpdateIndex(p *Post) error {
 
 // Index caches high level metadata about the blog's contents for fast access.
 type Index struct {
-	Posts     map[int]Post   `json:"posts"`
-	Fragments map[string]int `json:"fragments"`
+	Posts      map[int]Post   `json:"posts"`
+	Fragments  map[string]int `json:"fragments"`
+	Thumbnails map[int]string `json:"thumbnails"`
 }
 
 // GetIndex loads the index, or rebuilds it first if it doesn't exist.
@@ -33,8 +34,9 @@ func GetIndex() (*Index, error) {
 // RebuildIndex builds the index from scratch.
 func RebuildIndex() (*Index, error) {
 	idx := &Index{
-		Posts:     map[int]Post{},
-		Fragments: map[string]int{},
+		Posts:      map[int]Post{},
+		Fragments:  map[string]int{},
+		Thumbnails: map[int]string{},
 	}
 	entries, _ := DB.List("blog/posts")
 	for _, doc := range entries {
@@ -65,6 +67,12 @@ func (idx *Index) Update(p *Post) error {
 		Updated:        p.Updated,
 	}
 	idx.Fragments[p.Fragment] = p.ID
+
+	// Find a thumbnail image if possible.
+	if thumb, ok := p.ExtractThumbnail(); ok {
+		idx.Thumbnails[p.ID] = thumb
+	}
+
 	err := DB.Commit("blog/index", idx)
 	return err
 }

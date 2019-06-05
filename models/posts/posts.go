@@ -18,6 +18,12 @@ var DB *jsondb.DB
 
 var log *golog.Logger
 
+// Regexp used to parse a thumbnail image from a blog post. Looks for the first
+// URI component ending with an image extension.
+var (
+	ThumbnailImageRegexp = regexp.MustCompile(`['"(]([a-zA-Z0-9-_:/?.=&]+\.(?:jpe?g|png|gif))['")]`)
+)
+
 func init() {
 	log = golog.GetLogger("blog")
 }
@@ -189,6 +195,16 @@ func (p *Post) Delete() error {
 		return fmt.Errorf("GetIndex error: %v", err)
 	}
 	return idx.Delete(p)
+}
+
+// ExtractThumbnail searches and returns a thumbnail image to represent the
+// post. This will be the first image embedded in the post, or nothing.
+func (p *Post) ExtractThumbnail() (string, bool) {
+	result := ThumbnailImageRegexp.FindStringSubmatch(p.Body)
+	if len(result) < 2 {
+		return "", false
+	}
+	return result[1], true
 }
 
 // getNextID gets the next blog post ID.
