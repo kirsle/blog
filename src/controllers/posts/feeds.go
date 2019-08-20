@@ -70,6 +70,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		feed.Items = append(feed.Items, &feeds.Item{
+			Id:          fmt.Sprintf("%d", p.ID),
 			Title:       p.Title,
 			Link:        &feeds.Link{Href: config.Site.URL + "/" + p.Fragment},
 			Description: rendered,
@@ -83,8 +84,12 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 	// What format to encode it in?
 	if strings.Contains(r.URL.Path, ".atom") {
 		atom, _ := feed.ToAtom()
-		w.Header().Set("Content-Type", "application/atom+xml")
+		w.Header().Set("Content-Type", "application/atom+xml; encoding=utf-8")
 		w.Write([]byte(atom))
+	} else if strings.Contains(r.URL.Path, ".json") {
+		jsonData, _ := feed.ToJSON()
+		w.Header().Set("Content-Type", "application/json; encoding=utf-8")
+		w.Write([]byte(jsonData))
 	} else {
 		rss, _ := feed.ToRss()
 		w.Header().Set("Content-Type", "application/rss+xml; encoding=utf-8")

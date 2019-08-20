@@ -13,6 +13,7 @@ import (
 var ageGateSuffixes = []string{
 	"/blog.rss", // Allow public access to RSS and Atom feeds.
 	"/blog.atom",
+	"/blog.json",
 	".js",
 	".css",
 	".txt",

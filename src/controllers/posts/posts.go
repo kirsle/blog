@@ -48,6 +48,7 @@ func Register(r *mux.Router, loginError http.HandlerFunc) {
 	r.HandleFunc("/blog", indexHandler)
 	r.HandleFunc("/blog.rss", feedHandler)
 	r.HandleFunc("/blog.atom", feedHandler)
+	r.HandleFunc("/blog.json", feedHandler)
 	r.HandleFunc("/archive", archiveHandler)
 	r.HandleFunc("/tagged", taggedHandler)
 	r.HandleFunc("/tagged/{tag}", taggedHandler)
