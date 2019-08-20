@@ -11,6 +11,8 @@ import (
 )
 
 var ageGateSuffixes = []string{
+	"/blog.rss", // Allow public access to RSS and Atom feeds.
+	"/blog.atom",
 	".js",
 	".css",
 	".txt",
@@ -39,8 +41,8 @@ func AgeGate(verifyHandler func(http.ResponseWriter, *http.Request)) negroni.Han
 		}
 
 		// Allow static files and things through.
-		for _, prefix := range ageGateSuffixes {
-			if strings.HasSuffix(path, prefix) {
+		for _, suffix := range ageGateSuffixes {
+			if strings.HasSuffix(path, suffix) {
 				next(w, r)
 				return
 			}
