@@ -71,7 +71,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 
 		feed.Items = append(feed.Items, &feeds.Item{
 			Title:       p.Title,
-			Link:        &feeds.Link{Href: config.Site.URL + p.Fragment},
+			Link:        &feeds.Link{Href: config.Site.URL + "/" + p.Fragment},
 			Description: rendered,
 			Created:     p.Created,
 		})
