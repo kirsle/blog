@@ -24,6 +24,11 @@ var ageGateSuffixes = []string{
 	".gif",
 	".mp4",
 	".webm",
+	".ttf",
+	".eot",
+	".svg",
+	".woff",
+	".woff2",
 }
 
 // AgeGate is a middleware generator that does age verification for NSFW sites.
@@ -47,6 +52,12 @@ func AgeGate(verifyHandler func(http.ResponseWriter, *http.Request)) negroni.Han
 				next(w, r)
 				return
 			}
+		}
+
+		// POST requests are allowed.
+		if r.Method == http.MethodPost {
+			next(w, r)
+			return
 		}
 
 		// See if they've been cleared.
