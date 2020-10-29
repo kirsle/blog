@@ -8,13 +8,14 @@ import (
 	"time"
 
 	gorilla "github.com/gorilla/sessions"
+	"github.com/kirsle/blog/models/settings"
+	"github.com/kirsle/blog/models/users"
 	"github.com/kirsle/blog/src/log"
 	"github.com/kirsle/blog/src/middleware"
 	"github.com/kirsle/blog/src/middleware/auth"
+	"github.com/kirsle/blog/src/root"
 	"github.com/kirsle/blog/src/sessions"
 	"github.com/kirsle/blog/src/types"
-	"github.com/kirsle/blog/models/settings"
-	"github.com/kirsle/blog/models/users"
 )
 
 // Vars is an interface to implement by the templates to pass their own custom
@@ -113,19 +114,19 @@ func Template(w io.Writer, r *http.Request, path string, data interface{}) error
 	// Get the layout template.
 	if !isPartial {
 		templateName = "layout"
-		layout, err = ResolvePath(".layout")
+		layout, err = ResolvePath(".layout.gohtml")
 		if err != nil {
 			log.Error("RenderTemplate(%s): layout template not found", path)
 			return err
 		}
 	} else {
-		templateName = filepath.Basename
+		templateName = filepath.Absolute
 	}
 
 	// The comment entry partial.
-	commentEntry, err := ResolvePath("comments/entry.partial")
+	commentEntry, err := ResolvePath("comments/entry.partial.gohtml")
 	if err != nil {
-		log.Error("RenderTemplate(%s): comments/entry.partial not found")
+		log.Error("RenderTemplate: comments/entry.partial not found")
 		return err
 	}
 
@@ -135,17 +136,28 @@ func Template(w io.Writer, r *http.Request, path string, data interface{}) error
 	// and allows the filepath template to set the page title.
 	var templates []string
 	if !isPartial {
-		templates = append(templates, layout.Absolute)
+		templates = append(templates, layout.Absolute, commentEntry.Absolute, filepath.Absolute)
 	}
-	t, err = t.ParseFiles(append(templates, commentEntry.Absolute, filepath.Absolute)...)
-	if err != nil {
-		log.Error(err.Error())
-		return err
+
+	for _, filename := range templates {
+
+		if asset, err2 := root.Asset(filename); err2 == nil {
+			log.Debug("Parse %s from bindata", filename)
+			t, err = t.Parse(string(asset))
+		} else {
+			log.Debug("Parse %s from file", filename)
+			t, err = t.ParseFiles(filename)
+		}
+
+		if err != nil {
+			log.Error(err.Error())
+			return err
+		}
 	}
 
 	err = t.ExecuteTemplate(w, templateName, v)
 	if err != nil {
-		log.Error("Template parsing error: %s", err)
+		log.Error("Template parsing error(tmpl name: %s; ): %s", err)
 		return err
 	}
 

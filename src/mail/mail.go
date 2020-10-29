@@ -8,11 +8,12 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kirsle/blog/models/comments"
+	"github.com/kirsle/blog/models/settings"
 	"github.com/kirsle/blog/src/log"
 	"github.com/kirsle/blog/src/markdown"
 	"github.com/kirsle/blog/src/render"
-	"github.com/kirsle/blog/models/comments"
-	"github.com/kirsle/blog/models/settings"
+	"github.com/kirsle/blog/src/root"
 	"github.com/microcosm-cc/bluemonday"
 	gomail "gopkg.in/gomail.v2"
 )
@@ -51,10 +52,21 @@ func SendEmail(email Email) {
 	// Render the template to HTML.
 	var html bytes.Buffer
 	t := template.New(tmpl.Basename)
-	t, err = template.ParseFiles(tmpl.Absolute)
+
+	// Load it from bindata or filesystem.
+	if tmpl.BindataKey != "" {
+		log.Debug("Parse %s from bindata", tmpl.BindataKey)
+		asset, _ := root.Asset(tmpl.BindataKey)
+		t, err = t.Parse(string(asset))
+	} else {
+		log.Debug("Parse %s from file", tmpl.Absolute)
+		t, err = t.ParseFiles(tmpl.Absolute)
+	}
+
 	if err != nil {
 		log.Error("SendEmail: template parsing error: %s", err.Error())
 	}
+
 	err = t.ExecuteTemplate(&html, tmpl.Basename, email)
 	if err != nil {
 		log.Error("SendEmail: template execution error: %s", err.Error())

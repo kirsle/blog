@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/kirsle/blog/src/log"
+	"github.com/kirsle/blog/src/root"
 )
 
 // Blog configuration bindings.
@@ -37,6 +38,10 @@ type Filepath struct {
 	Basename string
 	Relative string // Relative path including document root (i.e. "root/about.html")
 	Absolute string // Absolute path on disk (i.e. "/opt/blog/root/about.html")
+
+	// If file was resolved to embedded bindata, this is the bindata key name.
+	// Zero value means it resolved to a file on filesystem.
+	BindataKey string
 }
 
 func (f Filepath) String() string {
@@ -55,39 +60,78 @@ func ResolvePath(path string) (Filepath, error) {
 
 	// If you need to debug this function, edit this block.
 	debug := func(tmpl string, args ...interface{}) {
-		if false {
+		if true { // edit this to enable
 			log.Debug(tmpl, args...)
 		}
 	}
 
-	debug("Resolving filepath for URI: %s", path)
-	for _, root := range []string{*UserRoot, *DocumentRoot} {
-		if len(root) == 0 {
-			continue
-		}
+	debug("ResolvePath(%s) called", path)
+
+	if len(*UserRoot) > 0 {
+		debug("1. Resolving filepath for URI in user root: %s", path)
 
 		// Resolve the file path.
-		relPath := filepath.Join(root, path)
+		relPath := filepath.Join(*UserRoot, path)
 		absPath, err := filepath.Abs(relPath)
 		basename := filepath.Base(relPath)
 		if err != nil {
 			log.Error("%v", err)
 		}
 
-		debug("Expected filepath: %s", absPath)
+		debug("   Expected filepath: %s", absPath)
 
 		// Found an exact hit?
 		if stat, err := os.Stat(absPath); !os.IsNotExist(err) && !stat.IsDir() {
-			debug("Exact filepath found: %s", absPath)
-			return Filepath{path, basename, relPath, absPath}, nil
+			debug("   + Exact filepath found: %s", absPath)
+			return Filepath{
+				URI:      path,
+				Basename: basename,
+				Relative: relPath,
+				Absolute: absPath,
+			}, nil
 		}
 
 		// Try some supported suffixes.
 		for _, suffix := range hiddenSuffixes {
 			test := absPath + suffix
 			if stat, err := os.Stat(test); !os.IsNotExist(err) && !stat.IsDir() {
-				debug("Filepath found via suffix %s: %s", suffix, test)
-				return Filepath{path + suffix, basename + suffix, relPath + suffix, test}, nil
+				debug("   + Filepath found via suffix %s: %s", suffix, test)
+				return Filepath{
+					URI:      path + suffix,
+					Basename: basename + suffix,
+					Relative: relPath + suffix,
+					Absolute: test,
+				}, nil
+			}
+		}
+	}
+
+	debug("2. Not found in filesystem, checking bindata for: %s", path)
+	{
+		// Exact hit?
+		if _, err := root.Asset(path); err == nil {
+			debug("   Found in bindata as: %s", path)
+			return Filepath{
+				URI:        path,
+				Basename:   filepath.Base(path),
+				Relative:   path,
+				Absolute:   path,
+				BindataKey: path,
+			}, nil
+		}
+
+		// Try some supported suffixes.
+		for _, suffix := range hiddenSuffixes {
+			test := path + suffix
+			if _, err := root.Asset(test); err == nil {
+				debug("   Filepath found via suffix %s: %s", suffix, test)
+				return Filepath{
+					URI:        test,
+					Basename:   filepath.Base(test),
+					Relative:   test,
+					Absolute:   test,
+					BindataKey: test,
+				}, nil
 			}
 		}
 	}

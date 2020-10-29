@@ -18,6 +18,14 @@ build:
 	gofmt -w .
 	go build $(LDFLAGS) -i -o bin/blog cmd/blog/main.go
 
+# `make bindata` to make the bindata module.
+# `make bindata-dev` for debug mode module for editing files locally.
+.PHONY: bindata bindata-dev
+bindata:
+	go-bindata -pkg root -prefix root/ -o src/root/bundle.go root/...
+bindata-dev:
+	go-bindata -debug -pkg root -prefix root/ -o src/root/bundle.go root/...
+
 # `make run` to run it in debug mode.
 .PHONY: run
 run:
